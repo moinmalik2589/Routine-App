@@ -4,6 +4,8 @@
 
 `createLocationProvider()` is the only provider-selection factory. A configured `VITE_GOOGLE_PLACES_API_KEY` selects the provider labelled “Google Places”; no key selects “Development city data”. Both use the same debounced autocomplete controller, keyboard navigation, selection and confirmation flow.
 
+The controller wraps browser timers as owner-preserving calls rather than storing unbound native functions. One DOM binding owns input, keyboard, pointer and outside-click listeners; closing the location view cancels pending work, and application teardown removes listeners and invalidates stale responses.
+
 Google Places API (New) supplies city identity and coordinates only. `tz-lookup` derives the IANA timezone locally and `adhan` calculates prayer times locally. Google is never a prayer-time provider.
 
 ## Development without Google

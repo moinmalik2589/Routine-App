@@ -58,6 +58,7 @@ Status: Complete — authorized Phase 4 scope was advanced scheduling, location 
 - [x] Recalculate and cache prayer data after confirmed coordinate or prayer-setting changes, with completion-safe current/future snapshot refresh.
 - [x] Lock Sehri and prayer-driven activities in both Activity Management and repository validation.
 - [x] Make the no-key development city catalog fully searchable/selectable, centralize mock/Google provider selection, surface Google configuration failures and report prayer rebuild results.
+- [x] Repair browser-native debounce invocation, add owner-preserving timer wrappers, DOM binding teardown and browser-compatible autocomplete regression coverage.
 
 ## Phase 5 — Native storage and backup
 
