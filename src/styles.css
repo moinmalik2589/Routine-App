@@ -73,6 +73,7 @@ input[type="checkbox"] { width: 22px; height: 22px; cursor: pointer; }
 .location-result { display: flex; flex-direction: column; gap: 2px; width: 100%; text-align: left; padding: 9px; border: 1px solid #cbd5e1; background: white; color: #166534; cursor: pointer; }
 .location-result span { color: #64748b; font-size: 12px; } .location-result:hover, .location-result.active { background: #f0fdf4; outline: 2px solid #22c55e; outline-offset: -2px; }
 .location-error { color: #b91c1c; padding: 10px; background: #fef2f2; }
+.provider-label { display: inline-block; margin: 0 0 8px; padding: 4px 8px; border-radius: 999px; color: #166534; background: #dcfce7; font-size: 12px; font-weight: bold; }
 .protected-activity { border-left: 4px solid #166534; padding-left: 10px; background: #f0fdf4; }
 .development-diagnostics { margin: 10px 0; padding: 9px; border-radius: 7px; background: #e0f2fe; color: #0369a1; font-size: 11px; overflow-wrap: anywhere; }
 .adjustment-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; } fieldset { border: 1px solid #cbd5e1; border-radius: 8px; margin-bottom: 12px; } legend { color: #166534; font-weight: bold; }

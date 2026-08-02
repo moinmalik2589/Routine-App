@@ -57,6 +57,7 @@ Status: Complete — authorized Phase 4 scope was advanced scheduling, location 
 - [x] Correct city autocomplete so configured Google Places is live, while no-key development mode uses an honest multi-city mock/manual flow.
 - [x] Recalculate and cache prayer data after confirmed coordinate or prayer-setting changes, with completion-safe current/future snapshot refresh.
 - [x] Lock Sehri and prayer-driven activities in both Activity Management and repository validation.
+- [x] Make the no-key development city catalog fully searchable/selectable, centralize mock/Google provider selection, surface Google configuration failures and report prayer rebuild results.
 
 ## Phase 5 — Native storage and backup
 

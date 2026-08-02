@@ -35,6 +35,7 @@
     <main>
       <section id="home-view" class="view-section active">
         <div class="card">
+          <div id="locationSaveDiagnostics" class="development-diagnostics" hidden></div>
           <button class="daily-alarm-heading" id="dailyAlarmToggle" title="Tap to toggle all alarms for today">
             <span id="dailyAlarmText">Daily Progress</span><span id="dailyAlarmIcon">🔔</span>
           </button>
@@ -117,7 +118,7 @@
           <button class="home-btn" id="detectLocation">Detect My Location</button>
           <div class="location-divider">or choose a city manually</div>
           <label class="location-search">City search<input type="search" id="locationSearch" value="Ghaziabad" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="locationResults"></label>
-          <p id="locationProviderMessage" class="summary" aria-live="polite"></p>
+          <p id="locationProviderLabel" class="provider-label"></p><p id="locationProviderMessage" class="summary" aria-live="polite"></p>
           <div id="locationResults" class="location-results" role="listbox"></div>
           <form id="locationForm" class="activity-form">
             <input id="profilePlaceId" type="hidden"><input id="profileFormattedAddress" type="hidden">

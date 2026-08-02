@@ -12,7 +12,7 @@ export class LocationAutocompleteController {
   }
   async run(query, requestId = ++this.requestId) {
     try { const results = await this.provider.search(query); if (requestId !== this.requestId) return null; return this.emit({ query, results, status: results.length ? 'results' : 'empty', activeIndex: results.length ? 0 : -1, error: null }); }
-    catch (error) { if (requestId !== this.requestId) return null; return this.emit({ query, results: [], status: 'error', activeIndex: -1, error }); }
+    catch (error) { if (requestId !== this.requestId) return null; const results = error.fallbackResults || []; return this.emit({ query, results, status: results.length ? 'fallback' : 'error', activeIndex: results.length ? 0 : -1, error, fallbackLabel: error.fallbackLabel || null }); }
   }
   move(amount) { if (!this.state.results.length) return this.state; const length = this.state.results.length; return this.emit({ activeIndex: (this.state.activeIndex + amount + length) % length }); }
   escape() { this.requestId++; if (this.timer) this.cancel(this.timer); return this.emit({ status: 'idle', results: [], activeIndex: -1, error: null }); }

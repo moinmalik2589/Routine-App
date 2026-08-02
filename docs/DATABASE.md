@@ -43,6 +43,7 @@ Each time slot has a stable ID, time, optional label, enabled state, notificatio
 - A confirmed profile change first calculates the replacement current/next-month cache, then activates the profile, removes only future rows belonging to the previous fingerprint, and refreshes eligible routine snapshots.
 - Past daily snapshots never change. Today/future snapshots without completed occurrences may be regenerated. When completion exists, completed occurrence identity/time/history is retained and only uncompleted prayer-controlled occurrence times are updated without duplication.
 - Profile activation rolls back to the previous valid profile if regeneration or snapshot refresh fails.
+- The repository exposes non-persistent save diagnostics with old/new fingerprints, cache counts and snapshot-refresh counts; these diagnostics are not stored as personal history.
 
 ## Protected prayer definitions
 

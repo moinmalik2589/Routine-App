@@ -65,10 +65,11 @@ export class RoutineRepository {
     await this.ensureInitialized(); const previous = await this.getLocationProfile(); const previousFingerprint = previous ? prayerSettingsFingerprint(previous) : null;
     const profile = createLocationProfile({ ...input, locationVersion: previous ? String((Number(previous.locationVersion) || 0) + 1) : '1' });
     try {
-      if (warmCache) await this.prayerCache.warmCurrentAndNext(currentDate, profile);
       await this.adapter.put(STORE_NAMES.profiles, profile);
-      await this.prayerCache.invalidateFuture(currentDate, previousFingerprint);
-      await this.refreshPrayerDrivenSnapshots(currentDate, profile);
+      const invalidatedPrayerRecords = await this.prayerCache.invalidateFuture(currentDate, previousFingerprint);
+      const generatedRecords = warmCache ? await this.prayerCache.warmCurrentAndNext(currentDate, profile) : [];
+      const snapshotRefresh = await this.refreshPrayerDrivenSnapshots(currentDate, profile);
+      this.lastProfileSaveDiagnostics = { coordinates: { latitude: profile.latitude, longitude: profile.longitude }, timeZone: profile.timeZone, oldFingerprint: previousFingerprint, newFingerprint: prayerSettingsFingerprint(profile), regeneratedPrayerRecords: generatedRecords.length, invalidatedPrayerRecords, snapshotRefresh, homeRefreshed: false };
       return profile;
     } catch (error) {
       if (previous) await this.adapter.put(STORE_NAMES.profiles, previous); else await this.adapter.delete(STORE_NAMES.profiles, 'default');

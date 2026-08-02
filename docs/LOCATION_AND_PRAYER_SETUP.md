@@ -2,45 +2,39 @@
 
 ## Provider design
 
-The Vite/Capacitor client uses the Places API (New) REST autocomplete and place-details surfaces behind `GooglePlacesProvider`. This matches the existing vanilla-JavaScript adapter boundary and requests details only after selection. Autocomplete requests start after two characters, are debounced, discard stale responses and share a session token through the selected Place Details request.
+`createLocationProvider()` is the only provider-selection factory. A configured `VITE_GOOGLE_PLACES_API_KEY` selects the provider labelled “Google Places”; no key selects “Development city data”. Both use the same debounced autocomplete controller, keyboard navigation, selection and confirmation flow.
 
-Google supplies city identity and coordinates only. `tz-lookup` derives the IANA timezone locally and `adhan` calculates all prayer times locally.
+Google Places API (New) supplies city identity and coordinates only. `tz-lookup` derives the IANA timezone locally and `adhan` calculates prayer times locally. Google is never a prayer-time provider.
 
 ## Development without Google
 
-Leave `VITE_GOOGLE_PLACES_API_KEY` blank. The screen explicitly displays “Live city search requires a Google Places API key.” Development search then uses a separate deterministic mock containing Ghaziabad, Delhi, Mumbai, Bengaluru, Kolkata, Hyderabad and Lucknow. It filters the typed query and never substitutes Ghaziabad for arbitrary text.
+Leave `VITE_GOOGLE_PLACES_API_KEY` blank. The screen keeps the warning “Live city search requires a Google Places API key” but autocomplete remains enabled. The mock catalog contains Ghaziabad, Delhi, Noida, Gurugram, Mumbai, Bengaluru, Hyderabad, Kolkata, Lucknow, Chennai, London and Dubai with coordinates and regions. Timezones are derived through `tz-lookup`.
 
-Ghaziabad remains the first-run default. Users may also enter city/state/country and valid latitude/longitude manually; changing coordinates recalculates the timezone. Merely typing search text does not activate or overwrite a profile.
+Search begins after two characters. Unknown text displays “No matching development locations” and never becomes Ghaziabad. A selected mock city fills the same fields as a Google result. Validated manual coordinates remain supported.
 
-## Google Places configuration
+## Live Google mode
 
-1. Enable **Places API (New)** in the intended Google Cloud project.
-2. Create separate keys for local web, deployed web and Android delivery. Never reuse an unrestricted key.
-3. Restrict API access to Places API (New).
-4. Restrict a web key to exact development and production HTTP referrers.
-5. Android keys normally require package `com.moinmalik.routine` plus debug/release SHA certificate restrictions. Because a Vite webview REST request cannot reliably satisfy an Android application restriction, production Android should use a native/proxied boundary capable of enforcing that restriction; never place an unrestricted key in the APK.
-6. Put the restricted development/web key in local `.env` as `VITE_GOOGLE_PLACES_API_KEY`. `.env` is ignored by Git.
+1. Enable **Places API (New)**.
+2. Create separate restricted keys for development web, deployed web and Android delivery.
+3. Restrict web keys to exact HTTP referrers and Places API (New).
+4. Android keys normally require package `com.moinmalik.routine` plus debug/release signing-certificate restrictions. A production webview REST deployment must use a native or secured proxy boundary capable of enforcing those restrictions; never ship an unrestricted key.
+5. Put the restricted development key in local `.env`. Never commit `.env`.
 
-Requested place fields are limited to ID, display name, formatted address, address components and coordinates. Search is biased toward India but not country-restricted. Businesses are excluded by locality/administrative-area primary types.
+Autocomplete uses a session token and requests only prediction identity/text. Place Details is requested only after selection and is limited to ID, display name, formatted address, address components and coordinates. Search is biased toward India but not country-restricted.
 
-## Selection and confirmation
+Invalid-key, disabled-API, billing, referrer and quota errors are displayed clearly. When a live request fails, matching mock results may appear only with an explicit “Development city data (Google unavailable)” label. A successful empty Google response is not silently replaced by mock data.
 
-- Typing displays loading, result, no-result or provider-error state.
-- Arrow keys move through results; Enter selects; Escape closes. Mouse and touch selection are supported.
-- Selection resolves Place Details and fills Place ID, formatted address, city, state, country, coordinates and locally derived timezone.
-- Editing search/profile text clears selected identity. Only a selected suggestion, confirmed foreground detection, or validated manual coordinates can activate a profile.
-- Detect My Location requests one foreground position only. No watcher or background permission is used.
-- Save is disabled during local prayer regeneration. A failed operation keeps the previous profile active and can be retried.
+## Confirmation and prayer rebuild
 
-## Prayer regeneration and snapshot policy
+- Typing alone never activates a profile. Selection, confirmed foreground detection or validated manual coordinates are required.
+- Changing selected text clears its Place identity.
+- Saving persists the exact coordinates, recalculates timezone, increments location version and changes the prayer fingerprint.
+- Future entries for the previous fingerprint are invalidated, current/next month timings are regenerated, eligible today/future prayer occurrences refresh, and Home reloads immediately.
+- Past snapshots and completion history remain unchanged. Completed current/future occurrences preserve identity and timing.
+- If regeneration fails, the previous profile is restored.
 
-The settings fingerprint contains coordinates rounded to five decimals, location version, timezone, calculation method, madhab, every manual adjustment and the Sehri offset. A confirmed change increments the location version, generates the current and next month, caches missing dates on demand and reloads the current Home record.
+Development builds briefly report selected coordinates, timezone, old/new fingerprint prefixes, regenerated prayer-record count and Home refresh status. Production builds hide this diagnostic.
 
-- Past stored routine and completion snapshots remain unchanged.
-- Today/future routines with no completed occurrences are rebuilt from active schedules and the new prayer fingerprint.
-- Today/future routines with completion history preserve completed occurrence IDs, times and completion rows. Uncompleted prayer-controlled occurrences update in place.
-- Cache rows and routine history are never bulk-reset.
+## Protected prayer activities
 
-Sehri is derived locally from Fajr using the Profile setting “Sehri before Fajr”. It appears only on Friday or configured fasting-range dates. Fajr, Zohar, Ashar/Asr, Maghrib and Isha use named calculated prayer keys. Activity Management cannot set fixed times for these activities.
-
-Development builds show coordinates, timezone, method, madhab, fingerprint and cache/fresh source on the location screen. Production builds do not expose these diagnostics.
+Sehri, Fajr, Zohar, Ashar/Asr, Maghrib and Isha expose only activity enabled and notification controls. Names, schedules, recurrence, time-slot structure, reordering, deletion and prayer mappings remain locked in both UI and repository validation. Sehri is derived from Fajr using the configured offset and appears only on Friday or configured fasting dates.
