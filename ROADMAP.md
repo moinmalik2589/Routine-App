@@ -51,6 +51,9 @@ Status: Complete — authorized Phase 4 scope was advanced scheduling, location 
 - [x] Calculate prayer times locally with `adhan` and resolve IANA timezones with `tz-lookup`.
 - [x] Cache current/upcoming month prayer data with configuration fingerprints and on-demand generation.
 - [x] Migrate schema 1 data to schema 2 without deleting legacy records.
+- [x] Correct the Phase 4 migration regression with physical IndexedDB version 3, required-store integrity validation and safe repair upgrades.
+- [x] Serialize database initialization, recover once from stale connections and prevent Home handlers from using a null/loading daily record.
+- [x] Add latest-request Home loading, readable retry errors and non-blocking prayer-cache warming.
 
 ## Phase 5 — Native storage and backup
 

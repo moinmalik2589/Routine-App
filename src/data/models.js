@@ -1,6 +1,7 @@
 import { createSchedule, createTimeSlot } from '../scheduling/schedule.js';
 
-export const SCHEMA_VERSION = 2;
+export const APPLICATION_SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = APPLICATION_SCHEMA_VERSION;
 
 export const STORE_NAMES = Object.freeze({
   metadata: 'metadata',

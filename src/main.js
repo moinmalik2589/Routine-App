@@ -6,10 +6,12 @@ import { BrowserGeolocationProvider, DevelopmentLocationProvider, createLocation
 import { DEFAULT_LOCATION_SUGGESTION } from './location/location-model.js';
 import { CALCULATION_METHODS, MADHABS } from './prayer/prayer-calculator.js';
 import { WEEKDAY_KEYS, createSchedule, createTimeSlot } from './scheduling/schedule.js';
+import { DailyLoadController } from './ui/daily-load-controller.js';
 
 const state = { day: null, activities: [], fastingRanges: [], monthDays: [], activityDays: [], profile: null, editingSlots: [], progressToToday: true, activeView: 'home-view' };
 const $ = (id) => document.getElementById(id);
 const searchProvider = createLocationSearchProvider(); const fallbackLocationProvider = new DevelopmentLocationProvider(); const geolocationProvider = new BrowserGeolocationProvider();
+let dailyLoader;
 const alarmActivity = (value) => value === 'fast' ? ['FAST_START', 'FAST_END'] : (state.activities.find(({ id }) => id === value)?.timeSlots || []).filter(({ enabled, notificationEnabled }) => enabled && notificationEnabled).map((slot) => `${state.activities.find(({ id }) => id === value).alarmId || `ACTIVITY:${value}`}:${slot.id}`);
 
 function escapeHtml(value) { return String(value).replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[char]); }
@@ -35,7 +37,7 @@ function isRamadan(date) { return isInRanges(date, state.fastingRanges); }
 function isFastingDay(day) { return day.weekday === 'Friday' || isRamadan(day.date); }
 
 function renderDay() {
-  const day = state.day; $('dayOfWeek').textContent = day.weekday;
+  const day = state.day; if (!day?.date || !Array.isArray(day.occurrences)) throw new Error('Cannot render an invalid daily routine record.'); $('dayOfWeek').textContent = day.weekday;
   $('dailyAlarmText').style.color = day.alarmsEnabled ? '#166534' : '#ef4444'; $('dailyAlarmIcon').textContent = day.alarmsEnabled ? '🔔' : '🔕';
   const rows = [...day.occurrences].sort((a, b) => {
     if (a.activityId === 'wake-up') return -1; if (b.activityId === 'wake-up') return 1; if (a.activityId === 'sleep') return 1; if (b.activityId === 'sleep') return -1; return timeMinutes(a.time) - timeMinutes(b.time);
@@ -53,7 +55,11 @@ function renderDay() {
   $('bottom-timings').hidden = false; calculateDailyProgress();
 }
 function calculateDailyProgress() { const boxes = [...document.querySelectorAll('[data-completion]')]; setRing('dailyProgressRing', 'dailyProgressText', boxes.length ? Math.round(boxes.filter((box) => box.checked).length / boxes.length * 100) : 0); }
-async function fetchRoutine() { $('routine-list').innerHTML = '<i>Loading data...</i>'; state.day = await routineService.getDay($('datePicker').value); renderDay(); }
+function validIsoDate(value) { return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(new Date(`${value}T12:00:00+05:30`).getTime()); }
+function setDailyLoading(loading) { $('previousDate').disabled = loading; $('nextDate').disabled = loading; $('datePicker').disabled = loading; $('dailyAlarmToggle').disabled = loading; }
+function showDailyError(error, date) { state.day = null; $('dayOfWeek').textContent = ''; $('bottom-timings').hidden = true; setRing('dailyProgressRing', 'dailyProgressText', 0); $('routine-list').innerHTML = `<div class="routine-error"><strong>Unable to load routine for ${escapeHtml(date)}.</strong><p>${escapeHtml(error?.message || 'Unexpected database error.')}</p><button class="home-btn" type="button" data-retry-routine>Retry</button></div>`; }
+async function fetchRoutine() { const date = $('datePicker').value; if (!validIsoDate(date)) { showDailyError(new Error('Select a valid date.'), date || 'the selected date'); return null; } return dailyLoader.load(date); }
+function requireCurrentDay(action) { const ready = dailyLoader?.getReadyDay(); if (!ready?.date || state.day?.date !== ready.date) { console.warn(`Ignored ${action}: daily routine is not ready.`); return null; } return ready; }
 
 function activityCell(day, activity) { const occurrences = day.occurrences.filter(({ activityId }) => activityId === activity.id); return occurrences.length ? occurrences.map((item) => `<input type="checkbox" class="grid-checkbox" title="${escapeHtml(item.time)}" ${day.completions[item.id] ? 'checked' : ''} disabled>`).join(' ') : '-'; }
 function relevantForProgress(day) { return !state.progressToToday || isOnOrBefore(day.date, todayIso()); }
@@ -115,10 +121,10 @@ function readLocationForm() { return { city: $('profileCity').value, state: $('p
 function bindEvents() {
   $('menuButton').addEventListener('click', (event) => { event.stopPropagation(); const open = $('dropdownMenu').classList.toggle('show'); $('menuButton').setAttribute('aria-expanded', String(open)); }); document.addEventListener('click', () => $('dropdownMenu').classList.remove('show'));
   document.querySelectorAll('[data-view]').forEach((button) => button.addEventListener('click', () => showView(button.dataset.view)));
-  $('datePicker').addEventListener('change', fetchRoutine); $('previousDate').addEventListener('click', () => { $('datePicker').value = addDays($('datePicker').value, -1); fetchRoutine(); }); $('nextDate').addEventListener('click', () => { $('datePicker').value = addDays($('datePicker').value, 1); fetchRoutine(); });
-  $('dailyAlarmToggle').addEventListener('click', async () => { await routineService.setDayAlarms(state.day.date, !state.day.alarmsEnabled); await fetchRoutine(); });
-  $('routine-list').addEventListener('change', async ({ target }) => { if (!target.dataset.completion) return; await routineService.setCompletion(state.day.date, target.dataset.completion, target.checked); state.day.completions[target.dataset.completion] = target.checked; calculateDailyProgress(); });
-  $('home-view').addEventListener('click', async ({ target }) => { const alarmId = target.dataset.alarm; if (!alarmId) return; await routineService.setAlarm(state.day.date, alarmId, !alarmEnabled(state.day, alarmId)); await fetchRoutine(); });
+  $('datePicker').addEventListener('change', fetchRoutine); $('previousDate').addEventListener('click', () => { if (!validIsoDate($('datePicker').value)) return; $('datePicker').value = addDays($('datePicker').value, -1); fetchRoutine(); }); $('nextDate').addEventListener('click', () => { if (!validIsoDate($('datePicker').value)) return; $('datePicker').value = addDays($('datePicker').value, 1); fetchRoutine(); });
+  $('dailyAlarmToggle').addEventListener('click', async () => { const day = requireCurrentDay('daily alarm toggle'); if (!day) return; await routineService.setDayAlarms(day.date, !day.alarmsEnabled); await fetchRoutine(); });
+  $('routine-list').addEventListener('change', async ({ target }) => { if (!target.dataset.completion) return; const day = requireCurrentDay('completion update'); if (!day) return; await routineService.setCompletion(day.date, target.dataset.completion, target.checked); if (state.day?.date !== day.date) return; state.day.completions[target.dataset.completion] = target.checked; calculateDailyProgress(); });
+  $('home-view').addEventListener('click', async ({ target }) => { if (target.hasAttribute('data-retry-routine')) { await fetchRoutine(); return; } const alarmId = target.dataset.alarm; if (!alarmId) return; const day = requireCurrentDay('individual alarm toggle'); if (!day) return; await routineService.setAlarm(day.date, alarmId, !alarmEnabled(day, alarmId)); if (state.day?.date === day.date) await fetchRoutine(); });
   $('monthPicker').addEventListener('change', fetchMonthly); $('monthlyProgressRing').addEventListener('click', () => { state.progressToToday = !state.progressToToday; renderMonthly(); });
   $('monthlyAlarmTitle').addEventListener('click', async () => { const enable = state.monthDays.every((day) => !day.alarmsEnabled); const ids = [...new Set(state.monthDays.flatMap(({ occurrences }) => occurrences.filter(({ notificationEnabled }) => notificationEnabled).map(({ notificationId }) => notificationId)).concat(['FAST_START', 'FAST_END']))]; await routineService.setManyAlarms(state.monthDays, ids, enable); await fetchMonthly(); });
   $('monthly-table').addEventListener('click', async ({ target }) => { if (!target.dataset.monthDate) return; const day = state.monthDays.find(({ date }) => date === target.dataset.monthDate); await routineService.setDayAlarms(day.date, !day.alarmsEnabled); await fetchMonthly(); });
@@ -136,7 +142,7 @@ function bindEvents() {
   $('detectLocation').addEventListener('click', async () => { $('location-status').textContent = 'Detecting location…'; try { const coordinates = await geolocationProvider.detect(); const named = await (searchProvider.reverseGeocode ? searchProvider.reverseGeocode(coordinates) : fallbackLocationProvider.reverseGeocode(coordinates)); fillLocationForm({ ...named, ...coordinates, timeZone: resolveTimezone(coordinates.latitude, coordinates.longitude) }); $('profileCity').dataset.source = 'device-foreground'; $('location-status').textContent = 'Location detected. Review and confirm.'; } catch (error) { $('location-status').textContent = `${error.message} Use manual city search below.`; } });
   $('searchLocation').addEventListener('click', async () => { const results = await searchProvider.search($('locationSearch').value); $('locationResults').innerHTML = results.map((item, index) => `<button class="location-result" type="button" data-location-index="${index}">${escapeHtml(item.label || `${item.city}, ${item.state}, ${item.country}`)}</button>`).join('') || '<p class="summary">No matching city found.</p>'; $('locationResults').dataset.results = JSON.stringify(results); });
   $('locationResults').addEventListener('click', async ({ target }) => { if (!target.dataset.locationIndex) return; const item = JSON.parse($('locationResults').dataset.results)[Number(target.dataset.locationIndex)]; const location = item.placeId ? await searchProvider.details(item.placeId) : item; fillLocationForm({ ...DEFAULT_LOCATION_SUGGESTION, ...location }); $('profileCity').dataset.source = location.locationSource || 'manual-search'; });
-  $('locationForm').addEventListener('submit', async (event) => { event.preventDefault(); $('location-status').textContent = 'Saving and preparing offline prayer times…'; state.profile = await routineService.saveLocationProfile(readLocationForm()); $('menuButton').hidden = false; $('location-status').textContent = ''; await refreshDefinitions(); showView('home-view'); await fetchRoutine(); });
+  $('locationForm').addEventListener('submit', async (event) => { event.preventDefault(); $('location-status').textContent = 'Saving location…'; try { state.profile = await routineService.saveLocationProfile(readLocationForm(), { warmCache: false }); $('menuButton').hidden = false; $('location-status').textContent = ''; await refreshDefinitions(); showView('home-view'); await fetchRoutine(); void routineService.warmPrayerCache(); } catch (error) { console.error('Location profile save failed.', error); $('location-status').textContent = `Unable to save location: ${error.message}`; } });
 }
 
 function initialiseControls() {
@@ -149,4 +155,14 @@ function initialiseControls() {
 }
 
 function cloneSlots(slots) { return structuredClone(slots); }
-await routineService.initialize(); await refreshDefinitions(); initialiseControls(); bindEvents(); state.profile = await routineService.getLocationProfile(); if (state.profile) { await routineService.warmPrayerCache(); await fetchRoutine(); } else openLocationSetup(false);
+async function bootstrap() {
+  initialiseControls();
+  dailyLoader = new DailyLoadController({ repository: routineService, onLoading: (loading) => { setDailyLoading(loading); if (loading) { state.day = null; $('routine-list').innerHTML = '<i>Loading data...</i>'; $('bottom-timings').hidden = true; } }, onSuccess: (day) => { state.day = day; renderDay(); }, onError: showDailyError });
+  bindEvents(); setDailyLoading(true);
+  try {
+    const initialization = await routineService.initialize(); if (import.meta.env.DEV) console.info('[development] IndexedDB diagnostics', initialization.diagnostics);
+    await refreshDefinitions(); state.profile = await routineService.getLocationProfile();
+    if (state.profile) { await fetchRoutine(); void routineService.warmPrayerCache(); } else { setDailyLoading(false); openLocationSetup(false); }
+  } catch (error) { console.error('Application database initialization failed.', error); setDailyLoading(false); showView('home-view'); showDailyError(error, $('datePicker').value || 'the selected date'); }
+}
+await bootstrap();

@@ -60,6 +60,7 @@ input[type="checkbox"] { width: 22px; height: 22px; cursor: pointer; }
 .management-item.disabled { opacity: .6; } .management-name { font-weight: bold; } .management-meta { color: #64748b; font-size: 12px; }
 .management-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 5px; } .management-actions button.danger { color: #ef4444; }
 .management-help { text-align: center; color: #64748b; font-size: 12px; font-style: italic; }
+.routine-error { padding: 15px; border-radius: 10px; border-left: 5px solid #ef4444; background: #fef2f2; color: #991b1b; } .routine-error .home-btn { margin: 5px 0 0; }
 .schedule-fields { margin: 8px 0 12px; padding: 10px; background: white; border-radius: 8px; border: 1px solid #e2e8f0; }
 .weekday-choices { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 7px; } .weekday-choices label { display: flex !important; grid-template-columns: none !important; gap: 4px !important; margin: 0 !important; font-size: 12px; }
 .time-slot-heading { display: flex; justify-content: space-between; align-items: center; color: #166534; margin: 12px 0 8px; }

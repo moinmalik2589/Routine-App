@@ -2,7 +2,19 @@
 
 The application uses `RoutineRepository` above `IndexedDbAdapter`. UI modules never issue IndexedDB calls directly, preserving the future Capacitor SQLite adapter seam.
 
-## Schema version 2
+## Versioning and schema integrity
+
+- Application data schema: **2** (`APPLICATION_SCHEMA_VERSION`).
+- Minimum physical IndexedDB version: **3** (`INDEXEDDB_PHYSICAL_VERSION`).
+- Database name: `moin-routine` (`DATABASE_NAME`).
+
+Physical version 3 is intentionally higher than the data schema. An early Phase 4 build could write metadata version 2 while a browser database lacked the new `profiles` store. Reopening physical version 2 could not fire `onupgradeneeded`, so the missing store was never created. Physical version 3 forces an authoritative upgrade that creates every missing required store without deleting existing stores or records.
+
+After opening, `validateSchemaIntegrity()` checks all required store names. If a database is already at the minimum physical version but remains incomplete, the adapter closes that connection and performs one safe repair upgrade at the next physical version. Metadata schema 2 is written only after data migrations finish successfully.
+
+The adapter shares one in-flight open promise, clears stale connections on `versionchange`/`close`, waits for explicit transaction completion, and retries a transaction at most once after a closing/stale connection error.
+
+## Application schema version 2
 
 | Store | Key | Model and purpose |
 | --- | --- | --- |
@@ -41,3 +53,7 @@ Each time slot has a stable ID, time, optional label, enabled state, notificatio
 - Preserves alarm state, ordering, protected fields and soft-deletion timestamps.
 
 Normal startup never deletes data. `resetDevelopmentDatabase(adapter)` remains development-only and absent from the UI.
+
+## Development diagnostics
+
+Development builds log only database name, physical version, application schema version, object-store names, connection state, repair status and active transaction count. Location/profile values are not logged. No reset control is exposed.
