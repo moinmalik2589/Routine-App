@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="color-scheme" content="light">
+    <meta name="theme-color" content="#f0fdf4">
+    <title>Moin Routine</title>
+  </head>
+  <body>
+    <div class="header-container">
+      <div>
+        <h1>MOIN MALIK</h1>
+        <div id="clock">Loading clock...</div>
+        <div id="dayOfWeek"></div>
+      </div>
+      <div class="right-controls">
+        <button class="hamburger" id="menuButton" aria-label="Open menu" aria-expanded="false">☰</button>
+        <div id="dropdownMenu" class="menu">
+          <button data-view="monthly-view">📅 Monthly Progress</button>
+          <button data-view="activity-view">📊 Activity Progress</button>
+        </div>
+        <div id="home-controls">
+          <input type="date" id="datePicker" aria-label="Routine date">
+          <div class="nav-buttons">
+            <button id="previousDate">&larr; Prev</button>
+            <button id="nextDate">Next &rarr;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <main>
+      <section id="home-view" class="view-section active">
+        <div class="card">
+          <button class="daily-alarm-heading" id="dailyAlarmToggle" title="Tap to toggle all alarms for today">
+            <span id="dailyAlarmText">Daily Progress</span><span id="dailyAlarmIcon">🔔</span>
+          </button>
+          <div class="alarm-hint">Tap Title to toggle ALL alarms. Tap <span>Green</span> times to toggle individual alarms.</div>
+          <div class="progress-container"><div class="progress-ring" id="dailyProgressRing"><div class="progress-inner" id="dailyProgressText">0%</div></div></div>
+          <div class="routine-header"><div>Timing</div><div>Activity</div><div class="center">Status</div></div>
+          <div id="routine-list"><i>Loading data...</i></div>
+          <div class="bottom-timings" id="bottom-timings" hidden><p id="fajr-display"></p><p id="fast-display"></p></div>
+        </div>
+      </section>
+
+      <section id="monthly-view" class="view-section">
+        <div class="card">
+          <button class="home-btn" data-view="home-view">&larr; Back to Home</button>
+          <div class="center"><button class="clickable-title active" id="monthlyAlarmTitle">Monthly Progress 🔔</button></div>
+          <div class="controls-row"><input type="month" id="monthPicker" aria-label="Progress month"></div>
+          <div class="progress-container"><button class="progress-ring clickable" id="monthlyProgressRing" title="Click to toggle calculation mode"><span class="progress-inner" id="monthlyProgressText">0%</span></button><div class="click-hint">Tap ring to toggle Total / Up-to-Today</div></div>
+          <div id="monthly-status" class="summary">Loading...</div>
+          <div class="table-scroll"><table class="spreadsheet-grid" id="monthly-table"></table></div>
+        </div>
+      </section>
+
+      <section id="activity-view" class="view-section">
+        <div class="card">
+          <button class="home-btn" data-view="home-view">&larr; Back to Home</button>
+          <div class="center"><button class="clickable-title" id="activityAlarmTitle">Activity Progress</button></div>
+          <div class="controls-row">
+            <select id="activitySelector" aria-label="Activity"></select>
+            <select id="activityViewType" aria-label="Period"><option value="weekly">Weekly</option><option value="monthly" selected>Monthly</option><option value="yearly">Yearly</option></select>
+          </div>
+          <div class="controls-row">
+            <input type="month" id="actMonthPicker" aria-label="Activity month">
+            <select id="actWeekPicker" aria-label="Week" hidden><option value="1">Week 1 (1st-7th)</option><option value="2">Week 2 (8th-14th)</option><option value="3">Week 3 (15th-21st)</option><option value="4">Week 4 (22nd-28th)</option><option value="5">Week 5 (29th+)</option></select>
+            <select id="actYearPicker" aria-label="Year" hidden></select>
+          </div>
+          <div class="progress-container"><button class="progress-ring clickable" id="activityProgressRing" title="Click to toggle calculation mode"><span class="progress-inner" id="activityProgressText">0%</span></button><div class="click-hint">Tap ring to toggle Total / Up-to-Today</div></div>
+          <div id="activity-status" class="summary">Loading...</div>
+          <div class="table-scroll"><table class="spreadsheet-grid" id="activity-table"></table></div>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

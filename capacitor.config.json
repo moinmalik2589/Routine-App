@@ -1,0 +1,8 @@
+{
+  "appId": "com.moinmalik.routine",
+  "appName": "Moin Routine",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}
