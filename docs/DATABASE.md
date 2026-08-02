@@ -26,7 +26,7 @@ The adapter shares one in-flight open promise, clears stale connections on `vers
 | `completions` | `date:occurrenceId` | Independent occurrence completion history, indexed by date/activity. Legacy activity-level rows are retained. |
 | `alarmStates` | `date` | Daily state and disabled occurrence notification IDs. |
 | `fastingRanges` | `id` | Configurable inclusive fasting ranges. |
-| `prayerTimings` | `date` | Reusable local prayer cache record with settings fingerprint and generation source. |
+| `prayerTimings` | `date` | Reusable local prayer cache with raw UTC instants, IANA-local display values, date-specific timezone offset, method parameters, calculator/cache version, settings fingerprint and generation source. |
 
 ## Activity and occurrence models
 
@@ -38,11 +38,13 @@ Each time slot has a stable ID, time, optional label, enabled state, notificatio
 
 - `adhan` calculates Fajr, Sunrise, Dhuhr, Asr, Maghrib and Isha locally.
 - Coordinates resolve to an IANA timezone locally through `tz-lookup`.
-- The cache fingerprint includes rounded latitude/longitude, location version, timezone, calculation method, madhab, all prayer adjustments and the Sehri offset.
+- Cache format **2** uses calculator identity `adhan-4.4.4/cache-2`. Its fingerprint includes rounded coordinates, location version, IANA timezone, calculation method, optional Fajr/Isha overrides, madhab, high-latitude rule, polar-circle resolution, shafaq, all adjustments and the Sehri offset.
+- Every prayer is stored both as its raw UTC ISO instant and an `Intl.DateTimeFormat` value formatted in the profile timezone. The date-specific `GMT±hh:mm` offset is diagnostic data, never an input or fixed offset.
 - Current and upcoming months are warmed after profile save/startup; missing dates are calculated on demand.
 - A confirmed profile change first calculates the replacement current/next-month cache, then activates the profile, removes only future rows belonging to the previous fingerprint, and refreshes eligible routine snapshots.
 - Past daily snapshots never change. Today/future snapshots without completed occurrences may be regenerated. When completion exists, completed occurrence identity/time/history is retained and only uncompleted prayer-controlled occurrence times are updated without duplication.
 - Profile activation rolls back to the previous valid profile if regeneration or snapshot refresh fails.
+- On first startup with calculator version 2, only incompatible current/future cache records are removed and regenerated. Past cache, daily snapshots and completions remain untouched.
 - The repository exposes non-persistent save diagnostics with old/new fingerprints, cache counts and snapshot-refresh counts; these diagnostics are not stored as personal history.
 
 ## Protected prayer definitions

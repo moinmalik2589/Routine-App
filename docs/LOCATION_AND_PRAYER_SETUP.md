@@ -37,6 +37,16 @@ Invalid-key, disabled-API, billing, referrer and quota errors are displayed clea
 
 Development builds briefly report selected coordinates, timezone, old/new fingerprint prefixes, regenerated prayer-record count and Home refresh status. Production builds hide this diagnostic.
 
+## Prayer accuracy and high latitudes
+
+Profile settings expose Recommended automatically, Middle of the Night, Seventh of the Night, Twilight Angle and None/raw high-latitude behavior. Recommended delegates to `HighLatitudeRule.recommended(coordinates)` and therefore resolves to seventh-of-night above 48° latitude. Polar-circle resolution, shafaq, optional Fajr/Isha angle or interval overrides, madhab and minute adjustments are saved and fingerprinted.
+
+Adhan receives a deterministic local-noon `Date` whose Gregorian components match the requested ISO date. Its prayer `Date` instances are stored as UTC ISO instants and formatted only with the profile’s IANA timezone. No device timezone or fixed offset is used. Sehri subtracts its configured duration from the corrected Fajr instant before timezone formatting.
+
+The development-only Prayer Calculation Inspector shows inputs, method angles, resolved high-latitude rule, raw UTC instants, timezone-local values, date-specific GMT/BST offset, fingerprint, cache source and current Home Fajr.
+
+Reference fixture: London `51.5074, -0.1278`, `Europe/London`, 2026-08-02, Moonsighting Committee, recommended high-latitude rule, Hanafi, unresolved polar-circle strategy, general shafaq and Fajr adjustment `+3`. Adhan 4.4.4 produces raw Fajr `2026-08-02T02:41:00.000Z`, formatted as `3:41 AM` in BST. Other methods/rules intentionally differ; for example Karachi 18° with recommended/seventh produces about `4:11 AM`, while the former implicit middle-of-night rule produced `2:36 AM`.
+
 ## Protected prayer activities
 
 Sehri, Fajr, Zohar, Ashar/Asr, Maghrib and Isha expose only activity enabled and notification controls. Names, schedules, recurrence, time-slot structure, reordering, deletion and prayer mappings remain locked in both UI and repository validation. Sehri is derived from Fajr using the configured offset and appears only on Friday or configured fasting dates.

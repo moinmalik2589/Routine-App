@@ -1,6 +1,6 @@
 import { addDays, daysInMonth, monthKey, parseIsoDate } from '../date-utils.js';
 import { STORE_NAMES } from '../data/models.js';
-import { calculatePrayerTimes, prayerSettingsFingerprint } from './prayer-calculator.js';
+import { PRAYER_CACHE_FORMAT_VERSION, calculatePrayerTimes, prayerSettingsFingerprint } from './prayer-calculator.js';
 
 export function nextMonth(month) { const { year, month: number } = parseIsoDate(`${month}-01`); return number === 12 ? `${year + 1}-01` : `${year}-${String(number + 1).padStart(2, '0')}`; }
 
@@ -18,4 +18,5 @@ export class PrayerCacheService {
     for (const record of records) if (record.date >= fromDate && record.settingsFingerprint && (!fingerprint || record.settingsFingerprint === fingerprint)) { await this.adapter.delete(STORE_NAMES.prayerTimings, record.date); count++; }
     return count;
   }
+  async invalidateIncompatibleFuture(fromDate) { const records = await this.adapter.getAll(STORE_NAMES.prayerTimings); let count = 0; for (const record of records) if (record.date >= fromDate && record.cacheFormatVersion !== PRAYER_CACHE_FORMAT_VERSION) { await this.adapter.delete(STORE_NAMES.prayerTimings, record.date); count++; } return count; }
 }

@@ -1,0 +1,1 @@
+export function homePrayerDisplayValues(day) { const prayers = day?.prayerTimes || {}; return { fajr: prayers.fajrStart || prayers.fastStart || 'N/A', sunrise: prayers.fajrEnd || prayers.sunrise || 'N/A', maghrib: prayers.fastEnd || prayers.maghrib || 'N/A' }; }

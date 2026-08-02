@@ -4,16 +4,16 @@ import { SCHEMA_VERSION, STORE_NAMES, createActivityDefinition, createCompletion
 import { scheduleApplies } from '../scheduling/schedule.js';
 import { DEFAULT_LOCATION_SUGGESTION, createLocationProfile } from '../location/location-model.js';
 import { PrayerCacheService } from '../prayer/prayer-cache.js';
-import { prayerSettingsFingerprint } from '../prayer/prayer-calculator.js';
+import { PRAYER_CALCULATOR_VERSION, PRAYER_CACHE_FORMAT_VERSION, prayerSettingsFingerprint } from '../prayer/prayer-calculator.js';
 
 const clone = (value) => structuredClone(value); const now = () => new Date().toISOString();
-function subtractMinutes(time, minutes) { const match = time?.match(/(\d+):(\d+)\s*(AM|PM)/i); if (!match) return time; let hour = Number(match[1]) % 12 + (match[3].toUpperCase() === 'PM' ? 12 : 0); const date = new Date(2000, 0, 1, hour, Number(match[2]) - minutes); return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }); }
+function subtractMinutes(time, minutes) { const match = time?.match(/(\d+):(\d+)\s*(AM|PM)/i); if (!match) return time; const hour = Number(match[1]) % 12 + (match[3].toUpperCase() === 'PM' ? 12 : 0); const total = ((hour * 60 + Number(match[2]) - Number(minutes)) % 1440 + 1440) % 1440; const resultHour = Math.floor(total / 60), suffix = resultHour >= 12 ? 'PM' : 'AM'; return `${resultHour % 12 || 12}:${String(total % 60).padStart(2, '0')} ${suffix}`; }
 function normalizeActivity(activity) { return createActivityDefinition(activity); }
 function notificationId(activity, slot) { return activity.alarmId ? `${activity.alarmId}:${slot.id}` : `ACTIVITY:${activity.id}:${slot.id}`; }
 function isProtectedPrayerActivity(activity) { return Boolean(activity?.protected || PROTECTED_PRAYER_ACTIVITY_IDS.includes(activity?.id)); }
 
 export class RoutineRepository {
-  constructor(adapter, { prayerCache, logger = console } = {}) { this.adapter = adapter; this.prayerCache = prayerCache || new PrayerCacheService(adapter); this.logger = logger; this.initializationPromise = null; this.initializationResult = null; this.cacheWarmPromise = null; }
+  constructor(adapter, { prayerCache, logger = console } = {}) { this.adapter = adapter; this.prayerCache = prayerCache || new PrayerCacheService(adapter); this.logger = logger; this.initializationPromise = null; this.initializationResult = null; this.cacheWarmPromise = null; this.prayerVersionPromise = null; }
 
   initialize() {
     if (this.initializationResult) return Promise.resolve(this.initializationResult);
@@ -77,6 +77,7 @@ export class RoutineRepository {
     }
   }
   async getPrayerProfile() { return await this.getLocationProfile() || createLocationProfile(DEFAULT_LOCATION_SUGGESTION); }
+  async ensurePrayerCalculatorCurrent(currentDate = todayIso()) { await this.ensureInitialized(); if (this.prayerVersionPromise) return this.prayerVersionPromise; this.prayerVersionPromise = (async () => { const stored = await this.adapter.get(STORE_NAMES.metadata, 'prayerCalculatorVersion'); if (stored?.value === PRAYER_CALCULATOR_VERSION) return { upgraded: false, invalidated: 0, regenerated: 0 }; const profile = await this.getLocationProfile(); if (!profile) { await this.adapter.put(STORE_NAMES.metadata, { key: 'prayerCalculatorVersion', value: PRAYER_CALCULATOR_VERSION, cacheFormatVersion: PRAYER_CACHE_FORMAT_VERSION, updatedAt: now() }); return { upgraded: true, invalidated: 0, regenerated: 0 }; } const invalidated = await this.prayerCache.invalidateIncompatibleFuture(currentDate); const generated = await this.prayerCache.warmCurrentAndNext(currentDate, profile); const snapshots = await this.refreshPrayerDrivenSnapshots(currentDate, profile); await this.adapter.put(STORE_NAMES.metadata, { key: 'prayerCalculatorVersion', value: PRAYER_CALCULATOR_VERSION, cacheFormatVersion: PRAYER_CACHE_FORMAT_VERSION, updatedAt: now() }); return { upgraded: true, invalidated, regenerated: generated.length, snapshots }; })().catch((error) => { this.prayerVersionPromise = null; throw error; }); return this.prayerVersionPromise; }
   async warmPrayerCache(currentDate = todayIso()) { await this.ensureInitialized(); this.cacheWarmPromise = this.prayerCache.warmCurrentAndNext(currentDate, await this.getPrayerProfile()).catch((error) => { this.logger.warn('Prayer cache warming failed; routine loading will use on-demand or fallback timings.', error); return []; }); return this.cacheWarmPromise; }
 
   async getActivities({ includeDeleted = false, includeDisabled = true } = {}) { await this.ensureInitialized(); return (await this.adapter.getAll(STORE_NAMES.activities)).map(normalizeActivity).filter((item) => (includeDeleted || !item.deletedAt) && (includeDisabled || item.enabled)).sort((a, b) => a.order - b.order); }

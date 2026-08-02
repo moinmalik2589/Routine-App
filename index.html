@@ -126,10 +126,16 @@
             <label>Latitude<input id="profileLatitude" type="number" step="any" required></label><label>Longitude<input id="profileLongitude" type="number" step="any" required></label>
             <label>IANA timezone<input id="profileTimezone" required></label>
             <label>Calculation method<select id="profileMethod"></select></label><label>Madhab<select id="profileMadhab"></select></label>
+            <label>High-latitude rule<select id="profileHighLatitudeRule"></select></label><label>Polar-circle resolution<select id="profilePolarCircle"></select></label>
+            <label>Shafaq setting<select id="profileShafaq"></select></label>
+            <label>Fajr angle override<input id="profileFajrAngle" type="number" min="0" max="30" step="0.1" placeholder="Method default"></label>
+            <label>Isha angle override<input id="profileIshaAngle" type="number" min="0" max="30" step="0.1" placeholder="Method default"></label>
+            <label>Isha interval override<input id="profileIshaInterval" type="number" min="0" max="300" step="1" placeholder="Method default"></label>
             <label>Sehri before Fajr (minutes)<input id="profileSehriOffset" type="number" min="0" max="180" step="1"></label>
             <fieldset><legend>Manual minute adjustments</legend><div id="prayerAdjustments" class="adjustment-grid"></div></fieldset>
             <p id="location-status" class="summary" aria-live="polite"></p>
             <div id="prayerDiagnostics" class="development-diagnostics" hidden></div>
+            <div id="prayerInspector" class="development-inspector" hidden><h3>Prayer Calculation Inspector</h3><label>Inspection date<input id="inspectorDate" type="date"></label><button class="nav-action" id="runPrayerInspector" type="button">Inspect Calculation</button><pre id="prayerInspectorOutput"></pre></div>
             <div class="form-actions"><button class="home-btn" type="submit">Confirm &amp; Save</button><button class="nav-action" type="button" id="cancelLocation" hidden>Cancel</button></div>
           </form>
         </div>
