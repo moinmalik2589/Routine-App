@@ -15,6 +15,7 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^7.4.3",
+    "fake-indexeddb": "^6.2.5",
     "vite": "^7.1.3"
   }
 }

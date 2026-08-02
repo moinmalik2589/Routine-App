@@ -38,4 +38,4 @@ The original project contained exactly one file: `index.html` (1,281 lines, inli
 - Year choices were hard-coded to 2026 and 2027.
 - Fast-time yearly lookup assumed prayer data began on 1 July 2026 and relied on array offsets.
 - Several date parses used browser-local `new Date('YYYY-MM-DD')`, which can shift the day. The migrated app uses explicit Asia/Kolkata date helpers.
-- Dynamic HTML used inline handlers and spreadsheet indexes. Phase 1 switches runtime data to named activity/day objects and event delegation; SQLite models arrive in Phase 3.
+- Dynamic HTML used inline handlers and spreadsheet indexes. Phase 1 switched runtime data to named activity/day objects and event delegation; Phase 2 added IndexedDB persistence behind a future SQLite-compatible repository boundary.

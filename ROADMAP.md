@@ -14,23 +14,32 @@ Status: Complete
 - [x] Use Asia/Kolkata-safe date helpers in the migrated client.
 - [x] Build and test the Phase 1 app.
 
-## Phase 2 — Authentication and account access
+## Phase 2 — IndexedDB persistence and activity management
 
-Status: Awaiting owner review; do not start yet.
+Status: Complete
+
+- [x] Replace memory-only mocks with an IndexedDB repository and named models.
+- [x] Add schema version 1 migrations and seed-only-when-empty initialization.
+- [x] Preserve daily definition snapshots and soft-deleted completion history.
+- [x] Persist completion and alarm changes across reloads.
+- [x] Calculate monthly and yearly progress from stored daily records.
+- [x] Add activity add/edit/reorder/enable/disable/remove and notification controls.
+- [x] Protect system prayer mappings from destructive changes.
+- [x] Add persistence, activity lifecycle, progress, migration and timezone tests.
+
+## Phase 3 — Authentication and account access
 
 - [ ] Add Firebase Authentication (signup, login, logout, reset, verification).
 - [ ] Add secure account-status checks for active, suspended, expired, and cancelled users.
 - [ ] Define Firebase Security Rules and Cloud Functions admin boundary.
 - [ ] Add an owner-only admin interface for account lifecycle actions.
 
-## Phase 3 — Offline persistence and routine management
+## Phase 4 — Native storage and backup
 
-- [ ] Add SQLite schema/repositories for activities, completions, preferences, and settings.
-- [ ] Add activity add/edit/reorder/enable/disable/remove flows.
-- [ ] Migrate all mock-service calls to offline-first repositories.
+- [ ] Add a Capacitor SQLite adapter implementing the repository boundary.
 - [ ] Add JSON backup export/import with validation and versioning.
 
-## Phase 4 — Prayer data and alarms
+## Phase 5 — Prayer data and alarms
 
 - [ ] Bundle offline prayer timing JSON and formalize its data model.
 - [ ] Add configurable fasting-date ranges and a later calculation provider seam.
@@ -38,7 +47,7 @@ Status: Awaiting owner review; do not start yet.
 - [ ] Reschedule alarms after device restart.
 - [ ] Protect system alarm configuration from user modification.
 
-## Phase 5 — Production hardening and release
+## Phase 6 — Production hardening and release
 
 - [ ] Add migration, repository, authentication, rules, and alarm tests.
 - [ ] Complete accessibility, responsive-device, offline, and timezone QA.

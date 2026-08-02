@@ -19,6 +19,7 @@
         <div id="dropdownMenu" class="menu">
           <button data-view="monthly-view">📅 Monthly Progress</button>
           <button data-view="activity-view">📊 Activity Progress</button>
+          <button data-view="manage-view">⚙ Activity Management</button>
         </div>
         <div id="home-controls">
           <input type="date" id="datePicker" aria-label="Routine date">
@@ -71,6 +72,23 @@
           <div class="progress-container"><button class="progress-ring clickable" id="activityProgressRing" title="Click to toggle calculation mode"><span class="progress-inner" id="activityProgressText">0%</span></button><div class="click-hint">Tap ring to toggle Total / Up-to-Today</div></div>
           <div id="activity-status" class="summary">Loading...</div>
           <div class="table-scroll"><table class="spreadsheet-grid" id="activity-table"></table></div>
+        </div>
+      </section>
+
+      <section id="manage-view" class="view-section">
+        <div class="card">
+          <button class="home-btn" data-view="home-view">&larr; Back to Home</button>
+          <div class="center"><h2 class="management-title">Activity Management</h2></div>
+          <form id="activityForm" class="activity-form">
+            <input type="hidden" id="editActivityId">
+            <label>Activity name<input type="text" id="activityName" maxlength="60" required></label>
+            <label>Default time<input type="time" id="activityTime"></label>
+            <label class="form-checkbox"><input type="checkbox" id="activityNotification"> Notification</label>
+            <div class="form-actions"><button class="home-btn" type="submit" id="saveActivity">Add Activity</button><button class="nav-action" type="button" id="cancelActivityEdit" hidden>Cancel</button></div>
+          </form>
+          <p id="management-status" class="summary" aria-live="polite"></p>
+          <div id="activity-management-list" class="management-list"></div>
+          <p class="management-help">Use arrows to reorder. Protected prayer mappings cannot be removed or changed.</p>
         </div>
       </section>
     </main>

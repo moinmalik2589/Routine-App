@@ -49,5 +49,16 @@ input[type="checkbox"] { width: 22px; height: 22px; cursor: pointer; }
 .daily-alarm-heading { display: flex; justify-content: center; align-items: center; gap: 8px; margin: 0 auto 5px; cursor: pointer; border: 0; background: transparent; color: #166534; font-size: 1.5em; font-weight: bold; }
 #dailyAlarmIcon { font-size: 1em; } .alarm-hint { text-align: center; font-size: 11px; color: #64748b; margin-bottom: 15px; } .alarm-hint span { color: #22c55e; font-weight: bold; }
 .summary { text-align: center; color: #666; font-weight: bold; margin-bottom: 15px; }
+.management-title { margin-top: 0; color: #166534; }
+.activity-form { max-width: 520px; margin: 0 auto 20px; padding: 15px; background: #f8fafc; border-radius: 10px; border-left: 5px solid #166534; }
+.activity-form label:not(.form-checkbox) { display: grid; grid-template-columns: 1fr 2fr; align-items: center; gap: 10px; margin-bottom: 10px; color: #166534; font-weight: bold; }
+.activity-form input[type="text"], .activity-form input[type="time"] { width: 100%; padding: 7px; border-radius: 5px; border: 1px solid #cbd5e1; background: white; color: #333; }
+.form-checkbox { display: flex; align-items: center; gap: 8px; color: #166534; font-weight: bold; margin-bottom: 12px; }
+.form-actions { display: flex; gap: 8px; } .form-actions .home-btn { margin: 0; }
+.nav-action, .management-actions button { padding: 6px 9px; border-radius: 4px; border: 1px solid #cbd5e1; background: white; cursor: pointer; color: #166534; font-weight: bold; }
+.management-item { display: grid; grid-template-columns: minmax(130px, 2fr) minmax(80px, 1fr) auto; gap: 10px; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee; }
+.management-item.disabled { opacity: .6; } .management-name { font-weight: bold; } .management-meta { color: #64748b; font-size: 12px; }
+.management-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 5px; } .management-actions button.danger { color: #ef4444; }
+.management-help { text-align: center; color: #64748b; font-size: 12px; font-style: italic; }
 [hidden] { display: none !important; }
-@media (max-width: 520px) { body { padding-left: 12px; padding-right: 12px; } h1 { font-size: 1.55rem; } .card { padding: 15px; } .routine-header, .routine-item { grid-template-columns: 1.2fr 1.7fr .7fr; gap: 5px; } }
+@media (max-width: 520px) { body { padding-left: 12px; padding-right: 12px; } h1 { font-size: 1.55rem; } .card { padding: 15px; } .routine-header, .routine-item { grid-template-columns: 1.2fr 1.7fr .7fr; gap: 5px; } .management-item { grid-template-columns: 1fr; } .management-actions { justify-content: flex-start; } }
