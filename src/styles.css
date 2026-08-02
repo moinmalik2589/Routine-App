@@ -52,7 +52,7 @@ input[type="checkbox"] { width: 22px; height: 22px; cursor: pointer; }
 .management-title { margin-top: 0; color: #166534; }
 .activity-form { max-width: 520px; margin: 0 auto 20px; padding: 15px; background: #f8fafc; border-radius: 10px; border-left: 5px solid #166534; }
 .activity-form label:not(.form-checkbox) { display: grid; grid-template-columns: 1fr 2fr; align-items: center; gap: 10px; margin-bottom: 10px; color: #166534; font-weight: bold; }
-.activity-form input[type="text"], .activity-form input[type="time"] { width: 100%; padding: 7px; border-radius: 5px; border: 1px solid #cbd5e1; background: white; color: #333; }
+.activity-form input[type="text"], .activity-form input[type="time"], .activity-form input[type="date"], .activity-form input[type="number"], .activity-form input:not([type]), .activity-form select { width: 100%; padding: 7px; border-radius: 5px; border: 1px solid #cbd5e1; background: white; color: #333; }
 .form-checkbox { display: flex; align-items: center; gap: 8px; color: #166534; font-weight: bold; margin-bottom: 12px; }
 .form-actions { display: flex; gap: 8px; } .form-actions .home-btn { margin: 0; }
 .nav-action, .management-actions button { padding: 6px 9px; border-radius: 4px; border: 1px solid #cbd5e1; background: white; cursor: pointer; color: #166534; font-weight: bold; }
@@ -60,5 +60,15 @@ input[type="checkbox"] { width: 22px; height: 22px; cursor: pointer; }
 .management-item.disabled { opacity: .6; } .management-name { font-weight: bold; } .management-meta { color: #64748b; font-size: 12px; }
 .management-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 5px; } .management-actions button.danger { color: #ef4444; }
 .management-help { text-align: center; color: #64748b; font-size: 12px; font-style: italic; }
+.schedule-fields { margin: 8px 0 12px; padding: 10px; background: white; border-radius: 8px; border: 1px solid #e2e8f0; }
+.weekday-choices { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 7px; } .weekday-choices label { display: flex !important; grid-template-columns: none !important; gap: 4px !important; margin: 0 !important; font-size: 12px; }
+.time-slot-heading { display: flex; justify-content: space-between; align-items: center; color: #166534; margin: 12px 0 8px; }
+.time-slot-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 7px; align-items: center; background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; margin-bottom: 8px; }
+.slot-options { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-size: 12px; color: #166534; } .slot-options label { display: flex !important; grid-template-columns: none !important; margin: 0 !important; gap: 4px !important; }
+.slot-options input[type="number"] { width: 70px; }
+.location-card { max-width: 680px; margin-left: auto; margin-right: auto; } .location-divider { text-align: center; color: #64748b; margin: 5px 0 15px; }
+.location-search { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; color: #166534; font-weight: bold; margin-bottom: 12px; } .location-search input { padding: 7px; border: 1px solid #cbd5e1; border-radius: 5px; }
+.location-result { display: block; width: 100%; text-align: left; padding: 9px; border: 1px solid #cbd5e1; background: white; color: #166534; cursor: pointer; }
+.adjustment-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; } fieldset { border: 1px solid #cbd5e1; border-radius: 8px; margin-bottom: 12px; } legend { color: #166534; font-weight: bold; }
 [hidden] { display: none !important; }
-@media (max-width: 520px) { body { padding-left: 12px; padding-right: 12px; } h1 { font-size: 1.55rem; } .card { padding: 15px; } .routine-header, .routine-item { grid-template-columns: 1.2fr 1.7fr .7fr; gap: 5px; } .management-item { grid-template-columns: 1fr; } .management-actions { justify-content: flex-start; } }
+@media (max-width: 520px) { body { padding-left: 12px; padding-right: 12px; } h1 { font-size: 1.55rem; } .card { padding: 15px; } .routine-header, .routine-item { grid-template-columns: 1.2fr 1.7fr .7fr; gap: 5px; } .management-item, .time-slot-row { grid-template-columns: 1fr; } .slot-options { grid-column: 1; } .management-actions { justify-content: flex-start; } .location-search { grid-template-columns: 1fr; } .activity-form label:not(.form-checkbox) { grid-template-columns: 1fr; } }

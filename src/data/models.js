@@ -1,4 +1,6 @@
-export const SCHEMA_VERSION = 1;
+import { createSchedule, createTimeSlot } from '../scheduling/schedule.js';
+
+export const SCHEMA_VERSION = 2;
 
 export const STORE_NAMES = Object.freeze({
   metadata: 'metadata',
@@ -9,6 +11,7 @@ export const STORE_NAMES = Object.freeze({
   alarmStates: 'alarmStates',
   fastingRanges: 'fastingRanges',
   prayerTimings: 'prayerTimings',
+  profiles: 'profiles',
 });
 
 export function createUserSettings(overrides = {}) {
@@ -16,6 +19,7 @@ export function createUserSettings(overrides = {}) {
 }
 
 export function createActivityDefinition(input) {
+  const legacySlot = input.defaultTime || input.prayerKey ? [createTimeSlot({ id: `${input.id}-time-1`, time: input.defaultTime || '', prayerKey: input.prayerKey, notificationEnabled: input.notificationEnabled ?? input.alarmId })] : [];
   return {
     id: input.id,
     name: input.name.trim(),
@@ -30,15 +34,21 @@ export function createActivityDefinition(input) {
     deletedAt: input.deletedAt || null,
     createdAt: input.createdAt || new Date().toISOString(),
     updatedAt: input.updatedAt || new Date().toISOString(),
+    schedule: createSchedule(input.schedule),
+    timeSlots: (input.timeSlots || legacySlot).map((slot, index) => createTimeSlot(slot, `${input.id}-time-${index + 1}`)),
   };
 }
 
-export function createDailyRoutineRecord(date, weekday, activitySnapshots) {
-  return { date, weekday, activitySnapshots: structuredClone(activitySnapshots), createdAt: new Date().toISOString() };
+export function createDailyRoutineRecord(date, weekday, activitySnapshots, occurrences = [], prayerSettingsFingerprint = null, prayerTimes = null) {
+  return { date, weekday, activitySnapshots: structuredClone(activitySnapshots), occurrences: structuredClone(occurrences), prayerSettingsFingerprint, prayerTimes: prayerTimes ? structuredClone(prayerTimes) : null, createdAt: new Date().toISOString() };
 }
 
 export function createCompletionRecord(date, activityId, completed = false) {
   return { id: `${date}:${activityId}`, date, activityId, completed: Boolean(completed), updatedAt: new Date().toISOString() };
+}
+
+export function createOccurrenceCompletionRecord(date, occurrenceId, activityId, timeSlotId, completed = false) {
+  return { id: `${date}:${occurrenceId}`, date, occurrenceId, activityId, timeSlotId, completed: Boolean(completed), updatedAt: new Date().toISOString() };
 }
 
 export function createDailyAlarmState(date, overrides = {}) {

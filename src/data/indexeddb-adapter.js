@@ -9,6 +9,7 @@ const storeDefinitions = [
   [STORE_NAMES.alarmStates, { keyPath: 'date' }],
   [STORE_NAMES.fastingRanges, { keyPath: 'id' }],
   [STORE_NAMES.prayerTimings, { keyPath: 'date' }],
+  [STORE_NAMES.profiles, { keyPath: 'id' }],
 ];
 
 function requestResult(request) {

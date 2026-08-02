@@ -20,6 +20,7 @@
           <button data-view="monthly-view">📅 Monthly Progress</button>
           <button data-view="activity-view">📊 Activity Progress</button>
           <button data-view="manage-view">⚙ Activity Management</button>
+          <button data-view="settings-view">👤 Profile &amp; Prayer Settings</button>
         </div>
         <div id="home-controls">
           <input type="date" id="datePicker" aria-label="Routine date">
@@ -82,13 +83,50 @@
           <form id="activityForm" class="activity-form">
             <input type="hidden" id="editActivityId">
             <label>Activity name<input type="text" id="activityName" maxlength="60" required></label>
-            <label>Default time<input type="time" id="activityTime"></label>
-            <label class="form-checkbox"><input type="checkbox" id="activityNotification"> Notification</label>
+            <label>Schedule<select id="scheduleType"><option value="daily">Every day</option><option value="selected-weekdays">Selected weekdays</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option><option value="specific-date">One specific date</option><option value="specific-dates">Multiple specific dates</option><option value="date-range">Custom date range</option><option value="none">No recurring schedule</option></select></label>
+            <div id="weekdayFields" class="schedule-fields" hidden><span>Weekdays</span><div id="weekdayChoices" class="weekday-choices"></div></div>
+            <div id="weeklyFields" class="schedule-fields" hidden><label>Repeat every (weeks)<input type="number" id="intervalWeeks" min="1" value="1"></label><label>Starting<input type="date" id="scheduleAnchor"></label></div>
+            <div id="monthlyFields" class="schedule-fields" hidden><label>Day of month<input type="number" id="monthlyDay" min="1" max="31" value="1"></label></div>
+            <div id="yearlyFields" class="schedule-fields" hidden><label>Month<input type="number" id="yearlyMonth" min="1" max="12" value="1"></label><label>Day<input type="number" id="yearlyDay" min="1" max="31" value="1"></label></div>
+            <div id="specificDateFields" class="schedule-fields" hidden><label>Specific date<input type="date" id="specificDate"></label></div>
+            <div id="specificDatesFields" class="schedule-fields" hidden><label>Dates (comma separated)<input type="text" id="specificDates" placeholder="2026-08-10, 2026-08-21"></label></div>
+            <div id="rangeFields" class="schedule-fields" hidden><label>Start date<input type="date" id="rangeStart"></label><label>End date<input type="date" id="rangeEnd"></label></div>
+            <label class="form-checkbox"><input type="checkbox" id="activityEnabled" checked> Activity enabled</label>
+            <div class="time-slot-heading"><strong>Daily time slots</strong><button class="nav-action" type="button" id="addTimeSlot">Add Time</button></div>
+            <div id="timeSlotEditor"></div>
             <div class="form-actions"><button class="home-btn" type="submit" id="saveActivity">Add Activity</button><button class="nav-action" type="button" id="cancelActivityEdit" hidden>Cancel</button></div>
           </form>
           <p id="management-status" class="summary" aria-live="polite"></p>
           <div id="activity-management-list" class="management-list"></div>
           <p class="management-help">Use arrows to reorder. Protected prayer mappings cannot be removed or changed.</p>
+        </div>
+      </section>
+
+      <section id="settings-view" class="view-section">
+        <div class="card">
+          <button class="home-btn" data-view="home-view">&larr; Back to Home</button>
+          <div class="center"><h2 class="management-title">Profile &amp; Prayer Settings</h2></div>
+          <div id="location-summary" class="bottom-timings"></div>
+          <button class="home-btn" id="changeLocation">Change Location</button>
+        </div>
+      </section>
+
+      <section id="location-view" class="view-section">
+        <div class="card location-card">
+          <div class="center"><h2 class="management-title">Location Setup</h2><p>Prayer times are calculated locally and remain available offline.</p></div>
+          <button class="home-btn" id="detectLocation">Detect My Location</button>
+          <div class="location-divider">or choose a city manually</div>
+          <label class="location-search">City search<input type="search" id="locationSearch" value="Ghaziabad" autocomplete="off"><button class="nav-action" id="searchLocation" type="button">Search</button></label>
+          <div id="locationResults"></div>
+          <form id="locationForm" class="activity-form">
+            <label>City<input id="profileCity" required></label><label>State<input id="profileState"></label><label>Country<input id="profileCountry" required></label>
+            <label>Latitude<input id="profileLatitude" type="number" step="any" required></label><label>Longitude<input id="profileLongitude" type="number" step="any" required></label>
+            <label>IANA timezone<input id="profileTimezone" required></label>
+            <label>Calculation method<select id="profileMethod"></select></label><label>Madhab<select id="profileMadhab"></select></label>
+            <fieldset><legend>Manual minute adjustments</legend><div id="prayerAdjustments" class="adjustment-grid"></div></fieldset>
+            <p id="location-status" class="summary" aria-live="polite"></p>
+            <div class="form-actions"><button class="home-btn" type="submit">Confirm &amp; Save</button><button class="nav-action" type="button" id="cancelLocation" hidden>Cancel</button></div>
+          </form>
         </div>
       </section>
     </main>

@@ -1,0 +1,11 @@
+import test from 'node:test'; import assert from 'node:assert/strict'; import { scheduleApplies } from '../src/scheduling/schedule.js';
+const yes = (schedule, date) => assert.equal(scheduleApplies(schedule, date), true); const no = (schedule, date) => assert.equal(scheduleApplies(schedule, date), false);
+test('daily recurrence', () => yes({ type: 'daily' }, '2026-08-03'));
+test('selected weekdays recurrence', () => { yes({ type: 'selected-weekdays', weekdays: ['Monday', 'Wednesday'] }, '2026-08-03'); no({ type: 'selected-weekdays', weekdays: ['Wednesday'] }, '2026-08-03'); });
+test('weekly interval recurrence', () => { yes({ type: 'weekly', weekdays: ['Monday'], anchorDate: '2026-08-03', intervalWeeks: 2 }, '2026-08-17'); no({ type: 'weekly', weekdays: ['Monday'], anchorDate: '2026-08-03', intervalWeeks: 2 }, '2026-08-10'); });
+test('monthly recurrence', () => yes({ type: 'monthly', dayOfMonth: 5 }, '2026-08-05'));
+test('yearly recurrence', () => yes({ type: 'yearly', month: 8, day: 5 }, '2026-08-05'));
+test('one specific date', () => yes({ type: 'specific-date', date: '2026-08-05' }, '2026-08-05'));
+test('multiple specific dates', () => yes({ type: 'specific-dates', dates: ['2026-08-05', '2026-08-09'] }, '2026-08-09'));
+test('date range is inclusive', () => { yes({ type: 'date-range', startDate: '2026-08-05', endDate: '2026-08-09' }, '2026-08-05'); yes({ type: 'date-range', startDate: '2026-08-05', endDate: '2026-08-09' }, '2026-08-09'); no({ type: 'date-range', startDate: '2026-08-05', endDate: '2026-08-09' }, '2026-08-10'); });
+test('no recurring schedule never applies', () => no({ type: 'none' }, '2026-08-05'));

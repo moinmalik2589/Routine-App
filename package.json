@@ -11,7 +11,9 @@
   },
   "dependencies": {
     "@capacitor/android": "^7.4.3",
-    "@capacitor/core": "^7.4.3"
+    "@capacitor/core": "^7.4.3",
+    "adhan": "^4.4.4",
+    "tz-lookup": "^6.1.25"
   },
   "devDependencies": {
     "@capacitor/cli": "^7.4.3",

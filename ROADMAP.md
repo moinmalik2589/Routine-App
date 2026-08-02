@@ -40,25 +40,30 @@ Status: Complete
 - [ ] Define Firebase Security Rules and Cloud Functions admin boundary.
 - [ ] Add an owner-only admin interface for account lifecycle actions.
 
-## Phase 4 — Native storage and backup
+## Phase 4 — Advanced scheduling, location and offline prayer calculation
+
+Status: Complete — authorized Phase 4 scope was advanced scheduling, location setup and local prayer calculation.
+
+- [x] Add nine activity schedule types and ordered multiple daily time slots.
+- [x] Generate immutable daily occurrence snapshots and occurrence-level completion/progress history.
+- [x] Add first-run location setup, foreground detection, manual fallback and profile settings.
+- [x] Add restricted Google Places adapter boundary plus no-key development provider.
+- [x] Calculate prayer times locally with `adhan` and resolve IANA timezones with `tz-lookup`.
+- [x] Cache current/upcoming month prayer data with configuration fingerprints and on-demand generation.
+- [x] Migrate schema 1 data to schema 2 without deleting legacy records.
+
+## Phase 5 — Native storage and backup
 
 - [ ] Add a Capacitor SQLite adapter implementing the repository boundary.
 - [ ] Add JSON backup export/import with validation and versioning.
 
-## Phase 5 — Prayer data and alarms
+## Phase 6 — Production Android alarms
 
-- [ ] Calculate prayer timings locally from latitude, longitude, date, IANA timezone, calculation method, and madhab; never use Google as the prayer-timing provider.
-- [ ] Cache locally generated timings in the existing `prayerTimings` database store for offline operation.
-- [ ] Pre-generate and cache at least the current month and upcoming month.
-- [ ] Refresh future cached timings when location, timezone, calculation method, or madhab changes.
-- [ ] Preserve old routines and completion history after profile/location changes; never silently rewrite existing daily routine snapshots.
-- [ ] Apply updated prayer timings only to future or newly created routine records.
-- [ ] Retain configurable fasting-date ranges and formalize the local prayer-calculation provider boundary.
 - [ ] Add Android local notifications/exact alarms and permission UX.
 - [ ] Reschedule alarms after device restart.
 - [ ] Protect system alarm configuration from user modification.
 
-## Phase 6 — Production hardening and release
+## Phase 7 — Production hardening and release
 
 - [ ] Add migration, repository, authentication, rules, and alarm tests.
 - [ ] Complete accessibility, responsive-device, offline, and timezone QA.
