@@ -16,6 +16,16 @@ const definitions = [
   { id: 'sleep', name: 'Go to Sleep', defaultTime: '1:00 AM' },
 ];
 
+export const PROTECTED_ACTIVITY_RULES = Object.freeze({
+  sehri: Object.freeze({ prayerKey: 'sehri', slotPrayerKey: 'sehri' }),
+  fajr: Object.freeze({ prayerKey: 'fajrPrayer', slotPrayerKey: 'fajrPrayer' }),
+  zohar: Object.freeze({ prayerKey: 'zohar', slotPrayerKey: 'zohar' }),
+  ashar: Object.freeze({ prayerKey: 'ashar', slotPrayerKey: 'ashar' }),
+  maghrib: Object.freeze({ prayerKey: 'maghrib', slotPrayerKey: 'maghrib' }),
+  isha: Object.freeze({ prayerKey: 'isha', slotPrayerKey: 'isha' }),
+});
+export const PROTECTED_PRAYER_ACTIVITY_IDS = Object.freeze(Object.keys(PROTECTED_ACTIVITY_RULES));
+
 export const DEFAULT_ACTIVITIES = Object.freeze(definitions.map((definition, order) => createActivityDefinition({ ...definition, order })));
 export const DEFAULT_FASTING_RANGES = Object.freeze([createFastingDateRange({ id: 'ramadan-2027', start: '2027-02-07', end: '2027-03-09', label: 'Ramadan 2027' })]);
 export const SYSTEM_ALARM_IDS = Object.freeze(['WAKEUP', 'WAKEUP_AGAIN', 'FAST_START', 'FAST_END', 'FAJR', 'ZOHAR', 'ASHAR', 'MAGHRIB', 'ISHA']);

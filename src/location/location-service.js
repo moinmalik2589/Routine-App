@@ -6,4 +6,5 @@ export class LocationSetupService {
   async detect() { const coordinates = await this.geolocation.detect(); const address = await this.reverseGeocoder.reverseGeocode(coordinates); return { ...address, ...coordinates, locationSource: 'device-foreground' }; }
   async detectOrFallback() { try { return { detected: true, location: await this.detect() }; } catch (error) { return { detected: false, error: error.message, location: this.getDefaultSuggestion() }; } }
   search(query) { return this.searchProvider.search(query); }
+  async select(suggestion) { return suggestion.latitude != null ? structuredClone(suggestion) : this.searchProvider.details(suggestion.placeId); }
 }

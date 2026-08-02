@@ -54,6 +54,9 @@ Status: Complete — authorized Phase 4 scope was advanced scheduling, location 
 - [x] Correct the Phase 4 migration regression with physical IndexedDB version 3, required-store integrity validation and safe repair upgrades.
 - [x] Serialize database initialization, recover once from stale connections and prevent Home handlers from using a null/loading daily record.
 - [x] Add latest-request Home loading, readable retry errors and non-blocking prayer-cache warming.
+- [x] Correct city autocomplete so configured Google Places is live, while no-key development mode uses an honest multi-city mock/manual flow.
+- [x] Recalculate and cache prayer data after confirmed coordinate or prayer-setting changes, with completion-safe current/future snapshot refresh.
+- [x] Lock Sehri and prayer-driven activities in both Activity Management and repository validation.
 
 ## Phase 5 — Native storage and backup
 

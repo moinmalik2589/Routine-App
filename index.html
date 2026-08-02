@@ -116,15 +116,19 @@
           <div class="center"><h2 class="management-title">Location Setup</h2><p>Prayer times are calculated locally and remain available offline.</p></div>
           <button class="home-btn" id="detectLocation">Detect My Location</button>
           <div class="location-divider">or choose a city manually</div>
-          <label class="location-search">City search<input type="search" id="locationSearch" value="Ghaziabad" autocomplete="off"><button class="nav-action" id="searchLocation" type="button">Search</button></label>
-          <div id="locationResults"></div>
+          <label class="location-search">City search<input type="search" id="locationSearch" value="Ghaziabad" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="locationResults"></label>
+          <p id="locationProviderMessage" class="summary" aria-live="polite"></p>
+          <div id="locationResults" class="location-results" role="listbox"></div>
           <form id="locationForm" class="activity-form">
+            <input id="profilePlaceId" type="hidden"><input id="profileFormattedAddress" type="hidden">
             <label>City<input id="profileCity" required></label><label>State<input id="profileState"></label><label>Country<input id="profileCountry" required></label>
             <label>Latitude<input id="profileLatitude" type="number" step="any" required></label><label>Longitude<input id="profileLongitude" type="number" step="any" required></label>
             <label>IANA timezone<input id="profileTimezone" required></label>
             <label>Calculation method<select id="profileMethod"></select></label><label>Madhab<select id="profileMadhab"></select></label>
+            <label>Sehri before Fajr (minutes)<input id="profileSehriOffset" type="number" min="0" max="180" step="1"></label>
             <fieldset><legend>Manual minute adjustments</legend><div id="prayerAdjustments" class="adjustment-grid"></div></fieldset>
             <p id="location-status" class="summary" aria-live="polite"></p>
+            <div id="prayerDiagnostics" class="development-diagnostics" hidden></div>
             <div class="form-actions"><button class="home-btn" type="submit">Confirm &amp; Save</button><button class="nav-action" type="button" id="cancelLocation" hidden>Cancel</button></div>
           </form>
         </div>

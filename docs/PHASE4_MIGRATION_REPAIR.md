@@ -18,6 +18,8 @@ The earlier adapter also allowed concurrent `open()` requests before `db` was as
 
 The deterministic regression fixture creates physical version 2 with metadata 2, deliberately omits `profiles`, inserts activity and completion data, and verifies that startup adds `profiles` while retaining both records. A second fixture repairs a malformed database already at physical version 3 by upgrading it to version 4.
 
+The subsequent location/prayer correction does not change the application or physical schema version. Flexible named-object profile records gain optional Place identity/address and Sehri-offset fields. Startup idempotently reconciles canonical protection for system prayer definitions while leaving every daily routine, completion, alarm, setting, fasting range and cached prayer record intact.
+
 ## Home recovery
 
 Home waits for initialization and location readiness. It renders the daily record before warming two-month prayer cache in the background. A latest-request token prevents rapid date navigation from applying stale results. While loading, dependent controls are disabled and record-dependent handlers return safely. Recoverable failures replace the loading text with a readable error and Retry button.

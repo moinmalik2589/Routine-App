@@ -20,7 +20,7 @@ The adapter shares one in-flight open promise, clears stale connections on `vers
 | --- | --- | --- |
 | `metadata` | `key` | Schema version and migration timestamps. |
 | `settings` | `id` | Small user/UI settings. |
-| `profiles` | `id` | Location and prayer settings: city, state, country, coordinates, IANA timezone, method, madhab, adjustments, source, version and timestamp. |
+| `profiles` | `id` | Location and prayer settings: Place ID/address, city, state, country, coordinates, IANA timezone, method, madhab, Sehri offset, adjustments, source, version and timestamp. |
 | `activities` | `id` | Ordered activity definitions, schedules, time slots, protection state and soft deletion. |
 | `dailyRoutines` | `date` | Immutable activity, occurrence and prayer-time snapshots for a date. |
 | `completions` | `date:occurrenceId` | Independent occurrence completion history, indexed by date/activity. Legacy activity-level rows are retained. |
@@ -38,10 +38,15 @@ Each time slot has a stable ID, time, optional label, enabled state, notificatio
 
 - `adhan` calculates Fajr, Sunrise, Dhuhr, Asr, Maghrib and Isha locally.
 - Coordinates resolve to an IANA timezone locally through `tz-lookup`.
-- The cache fingerprint includes rounded coordinates, location version, timezone, calculation method, madhab and adjustments.
+- The cache fingerprint includes rounded latitude/longitude, location version, timezone, calculation method, madhab, all prayer adjustments and the Sehri offset.
 - Current and upcoming months are warmed after profile save/startup; missing dates are calculated on demand.
-- Future reusable cache rows are invalidated after profile changes.
-- Every daily routine embeds the prayer record it used. Cache refreshes therefore cannot alter an existing daily snapshot.
+- A confirmed profile change first calculates the replacement current/next-month cache, then activates the profile, removes only future rows belonging to the previous fingerprint, and refreshes eligible routine snapshots.
+- Past daily snapshots never change. Today/future snapshots without completed occurrences may be regenerated. When completion exists, completed occurrence identity/time/history is retained and only uncompleted prayer-controlled occurrence times are updated without duplication.
+- Profile activation rolls back to the previous valid profile if regeneration or snapshot refresh fails.
+
+## Protected prayer definitions
+
+`sehri`, `fajr`, `zohar`, `ashar`, `maghrib` and `isha` are canonical protected definitions. Startup reconciliation restores their names, schedules, prayer keys and system alarm mappings without changing historical snapshots or deleting user records. Repository calls may change only activity enabled state and protected-slot notification state; name, time, recurrence, deletion and protected mapping mutations are rejected.
 
 ## Version 1 → version 2 migration
 
