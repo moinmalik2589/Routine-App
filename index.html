@@ -22,6 +22,7 @@
           <button data-view="activity-view">📊 Activity Progress</button>
           <button data-view="manage-view">⚙ Activity Management</button>
           <button data-view="settings-view">👤 User Profile</button>
+          <button id="logoutButton">Logout</button>
         </div>
         <div id="home-controls">
           <input type="date" id="datePicker" aria-label="Routine date">
@@ -34,6 +35,7 @@
     </div>
 
     <main>
+      <section id="auth-view" class="view-section"><div class="card"><div class="center"><h2 class="management-title">Routine Account</h2></div><form id="loginForm" class="activity-form"><label>Email<input id="loginEmail" type="email" autocomplete="email" required></label><label>Password<input id="loginPassword" type="password" autocomplete="current-password" required></label><button class="home-btn" type="submit">Login</button></form><details><summary>Create account</summary><form id="signupForm" class="activity-form"><label>Name<input id="signupName" required></label><label>Email<input id="signupEmail" type="email" required></label><label>Password<input id="signupPassword" type="password" minlength="8" required></label><label>Confirm password<input id="signupConfirm" type="password" minlength="8" required></label><button class="home-btn" type="submit">Sign Up</button></form></details><button id="forgotPassword" class="nav-action" type="button">Forgot password</button><p id="authStatus" class="summary" aria-live="polite"></p></div></section>
       <section id="home-view" class="view-section active">
         <div class="card">
           <div id="locationSaveDiagnostics" class="development-diagnostics" hidden></div>

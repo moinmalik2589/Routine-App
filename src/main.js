@@ -16,10 +16,12 @@ import { DailyLoadController } from './ui/daily-load-controller.js';
 import { activityManagementControls } from './ui/activity-management-controls.js';
 import { homePrayerDisplayValues } from './ui/prayer-display.js';
 import { profileHeading, profileLocationLabel } from './ui/profile-presentation.js';
+import { firebaseConfigured, firebaseServices } from './auth/firebase-client.js'; import { AuthService } from './auth/auth-service.js';
 
 const state = { day: null, activities: [], fastingRanges: [], monthDays: [], activityDays: [], profile: null, settings: null, editingSlots: [], progressToToday: true, activeView: 'home-view', locationDraft: { selected: null, coordinatesChanged: false }, locationResults: [], mapDraft: null, enablingPrayer: false };
 const $ = (id) => document.getElementById(id);
 const searchProvider = createLocationProvider(); const geolocationProvider = new BrowserGeolocationProvider(); const mapProvider = createMapProvider({ reverseGeocoder: searchProvider });
+const authService = firebaseConfigured ? new AuthService(firebaseServices()) : null;
 let dailyLoader; let autocompleteController; let autocompleteBinding; let mountedMap;
 const alarmActivity = (value) => value === 'fast' ? ['FAST_START', 'FAST_END'] : (state.activities.find(({ id }) => id === value)?.timeSlots || []).filter(({ enabled, notificationEnabled }) => enabled && notificationEnabled).map((slot) => `${state.activities.find(({ id }) => id === value).alarmId || `ACTIVITY:${value}`}:${slot.id}`);
 
@@ -141,6 +143,10 @@ function updatePrayerDiagnostics() { if (!import.meta.env.DEV || !state.profile)
 function bindEvents() {
   $('menuButton').addEventListener('click', (event) => { event.stopPropagation(); const open = $('dropdownMenu').classList.toggle('show'); $('menuButton').setAttribute('aria-expanded', String(open)); }); document.addEventListener('click', () => $('dropdownMenu').classList.remove('show'));
   document.querySelectorAll('[data-view]').forEach((button) => button.addEventListener('click', () => showView(button.dataset.view)));
+  $('loginForm').addEventListener('submit', async (event) => { event.preventDefault(); try { await authService.login($('loginEmail').value, $('loginPassword').value); location.reload(); } catch (error) { $('authStatus').textContent = error.message; } });
+  $('signupForm').addEventListener('submit', async (event) => { event.preventDefault(); try { await authService.signup({ displayName: $('signupName').value, email: $('signupEmail').value, password: $('signupPassword').value, confirmPassword: $('signupConfirm').value }); $('authStatus').textContent = 'Verification email sent. Verify your email, then ask the owner to activate your account.'; } catch (error) { $('authStatus').textContent = error.message; } });
+  $('forgotPassword').addEventListener('click', async () => { const email = $('loginEmail').value; if (!email) { $('authStatus').textContent = 'Enter your email first.'; return; } try { await authService.resetPassword(email); $('authStatus').textContent = 'Password reset email sent.'; } catch (error) { $('authStatus').textContent = error.message; } });
+  $('logoutButton').addEventListener('click', async () => { if (authService) await authService.logout(); location.reload(); });
   $('datePicker').addEventListener('change', fetchRoutine); $('previousDate').addEventListener('click', () => { if (!validIsoDate($('datePicker').value)) return; $('datePicker').value = addDays($('datePicker').value, -1); fetchRoutine(); }); $('nextDate').addEventListener('click', () => { if (!validIsoDate($('datePicker').value)) return; $('datePicker').value = addDays($('datePicker').value, 1); fetchRoutine(); });
   $('dailyAlarmToggle').addEventListener('click', async () => { const day = requireCurrentDay('daily alarm toggle'); if (!day) return; await routineService.setDayAlarms(day.date, !day.alarmsEnabled); await fetchRoutine(); });
   $('routine-list').addEventListener('change', async ({ target }) => { if (!target.dataset.completion) return; const day = requireCurrentDay('completion update'); if (!day) return; await routineService.setCompletion(day.date, target.dataset.completion, target.checked); if (state.day?.date !== day.date) return; state.day.completions[target.dataset.completion] = target.checked; calculateDailyProgress(); });
@@ -195,6 +201,7 @@ async function bootstrap() {
   dailyLoader = new DailyLoadController({ repository: routineService, onLoading: (loading) => { setDailyLoading(loading); if (loading) { state.day = null; $('routine-list').innerHTML = '<i>Loading data...</i>'; $('bottom-timings').hidden = true; } }, onSuccess: (day) => { state.day = day; renderDay(); updatePrayerDiagnostics(); }, onError: showDailyError });
   bindEvents(); setDailyLoading(true);
   try {
+    if (authService) { const user = await authService.waitForUser(); if (!user) { setDailyLoading(false); $('menuButton').hidden = true; showView('auth-view'); return; } let access; try { access = navigator.onLine ? await authService.access(user) : authService.cachedAccess(user); } catch { access = authService.cachedAccess(user); } if (!access.allowed) { setDailyLoading(false); $('menuButton').hidden = true; showView('auth-view'); $('authStatus').textContent = ({ 'email-unverified': 'Verify your email before continuing.', suspended: 'This account is suspended.', deactivated: 'This account is deactivated.', expired: 'Subscription access has expired.', pending: 'Your account is awaiting activation.', 'reconnect-required': 'Connect to the internet to verify access.' })[access.reason] || 'Account access is unavailable.'; return; } }
     const initialization = await routineService.initialize(); if (import.meta.env.DEV) console.info('[development] IndexedDB diagnostics', initialization.diagnostics);
     state.settings = await routineService.getSettings(); await refreshDefinitions(); state.profile = await routineService.getLocationProfile(); await routineService.ensurePrayerCalculatorCurrent();
     renderProfileIdentity(); if (state.profile && state.settings.onboardingChoice) { await fetchRoutine(); if (state.settings.prayerRoutineEnabled !== false) void routineService.warmPrayerCache(); } else if (state.profile) { setDailyLoading(false); showView('routine-choice-view'); } else { setDailyLoading(false); openSimpleLocationSetup(false); }
