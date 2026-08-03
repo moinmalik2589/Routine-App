@@ -23,6 +23,7 @@
           <button data-view="manage-view">⚙ Activity Management</button>
           <button data-view="settings-view">👤 User Profile</button>
           <button id="logoutButton">Logout</button>
+          <button id="adminMenuButton" data-view="admin-view" hidden>Admin</button>
         </div>
         <div id="home-controls">
           <input type="date" id="datePicker" aria-label="Routine date">
@@ -119,6 +120,7 @@
       </section>
 
       <section id="routine-choice-view" class="view-section"><div class="card"><div class="center"><h2 class="management-title">Choose your routine</h2><p>You can change activities later.</p></div><div class="routine-choice-grid"><button class="home-btn" id="choosePredefined" type="button"><strong>Use Predefined Routine</strong><span>Start with the complete routine.</span></button><button class="home-btn" id="chooseCustom" type="button"><strong>Create My Own Routine</strong><span>Start with prayer activities and add your own.</span></button></div><p id="routine-choice-status" class="summary"></p></div></section>
+      <section id="admin-view" class="view-section"><div class="card"><button class="home-btn" data-view="home-view">← Back to Home</button><h2 class="management-title">Subscription Administration</h2><label>Search users<input id="adminSearch" type="search"></label><div class="controls-row"><label>Subscription start<input id="adminStart" type="date"></label><label>Subscription end<input id="adminEnd" type="date"></label></div><button id="adminRefresh" class="nav-action" type="button">Refresh</button><p id="adminStatus" class="summary"></p><div id="adminUsers" class="management-list"></div></div></section>
 
       <section id="location-view" class="view-section">
         <div class="card location-card">

@@ -1,0 +1,3 @@
+export const ADMIN_ACTIONS = Object.freeze(['activate', 'suspend', 'deactivate', 'startTrial', 'extend', 'expire', 'cancel', 'restore']);
+export function requireAdminClaim(claims) { if (claims?.admin !== true) throw new Error('Administrator custom claim required.'); return true; }
+export function validateAdminAction(input) { if (!ADMIN_ACTIONS.includes(input?.action)) throw new Error('Invalid admin action.'); if (!input.targetUid || typeof input.targetUid !== 'string') throw new Error('Target UID is required.'); if (['startTrial', 'extend'].includes(input.action) && (!input.subscriptionEnd || Number.isNaN(Date.parse(input.subscriptionEnd)))) throw new Error('A valid subscription end date is required.'); return input; }

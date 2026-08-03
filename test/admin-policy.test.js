@@ -1,0 +1,4 @@
+import test from 'node:test'; import assert from 'node:assert/strict'; import { requireAdminClaim, validateAdminAction } from '../src/admin/admin-policy.js';
+test('normal users are denied admin access', () => assert.throws(() => requireAdminClaim({ admin: false }), /claim required/));
+test('admin custom claim is required and accepted', () => assert.equal(requireAdminClaim({ admin: true }), true));
+test('admin action validates target, action and subscription dates', () => { assert.throws(() => validateAdminAction({ action: 'activate' }), /UID/); assert.throws(() => validateAdminAction({ action: 'promote', targetUid: 'u' }), /Invalid/); assert.throws(() => validateAdminAction({ action: 'extend', targetUid: 'u' }), /end date/); assert.equal(validateAdminAction({ action: 'extend', targetUid: 'u', subscriptionEnd: '2027-01-01' }).targetUid, 'u'); });
