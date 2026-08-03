@@ -4,4 +4,5 @@ import { createStorageAdapter } from './storage-factory.js'; import { BackupServ
 export const databaseAdapter = await createStorageAdapter();
 export const routineService = new RoutineRepository(databaseAdapter);
 export const backupService = new BackupService(databaseAdapter);
+export async function deleteAllLocalData() { await databaseAdapter.destroy(); }
 export { resetDevelopmentDatabase };

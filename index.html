@@ -10,7 +10,7 @@
   <body>
     <div class="header-container">
       <div>
-        <h1 id="userDisplayName">MOIN MALIK</h1>
+        <h1 id="userDisplayName">ROUTINE</h1>
         <div id="clock">Loading clock...</div>
         <div id="dayOfWeek"></div>
         <button id="homeLocation" class="home-location" type="button" hidden></button>
@@ -114,9 +114,12 @@
           <div class="center"><h2 class="management-title">User Profile</h2></div>
           <form id="nameForm" class="activity-form profile-name-form"><label>Your name<input id="settingsDisplayName" maxlength="80" required></label><button class="home-btn" type="submit">Save Name</button></form>
           <p id="profile-status" class="summary" aria-live="polite"></p>
+          <div id="accountSummary" class="bottom-timings"></div>
           <div id="prayerProfileSettings"><div id="location-summary" class="bottom-timings"></div><button class="home-btn" id="changeLocation">Change Location</button><p><strong>Prayer calculation:</strong> <span id="automaticPrayerSummary"></span></p><details id="optionalAdjustments"><summary>Optional Prayer Time Adjustments</summary><p class="summary">Optional minute adjustments apply on top of the automatic local calculation.</p><form id="adjustmentForm" class="activity-form"><div id="settingsPrayerAdjustments" class="adjustment-grid"></div><label>Sehri before Fajr (minutes)<input id="settingsSehriOffset" type="number" min="0" max="180" step="1"></label><div class="form-actions"><button class="home-btn" type="submit">Save Adjustments</button><button class="nav-action" id="resetAdjustments" type="button">Reset to automatic defaults</button></div></form></details></div>
           <details><summary>Backup &amp; Restore</summary><p class="summary">Backups contain local profile and routine history, never passwords or authentication tokens.</p><div class="form-actions"><button class="home-btn" id="exportBackup" type="button">Export JSON Backup</button><button class="nav-action" id="importBackup" type="button">Import JSON Backup</button></div><p id="backupStatus" class="summary"></p></details>
           <details><summary>Alarm Permissions</summary><p class="summary">Precise alarms are a core routine feature so reminders can fire while the app is closed, the screen is locked, or the device is idle. Android may ask you to allow exact alarms and notifications.</p><button id="requestAlarmPermissions" class="home-btn" type="button">Review Alarm Permissions</button><p id="alarmPermissionStatus" class="summary"></p></details>
+          <details><summary>Privacy &amp; Account</summary><p class="summary">Routine history stays on this device unless you export a backup. Authentication profile and account status are stored in Firebase when configured.</p><div class="form-actions"><button id="requestAccountDeletion" class="nav-action" type="button">Request Account Deletion</button><button id="deleteLocalData" class="nav-action danger" type="button">Delete Local Data</button></div></details>
+          <details><summary>About</summary><p>Moin Routine <span id="appVersion">0.1.0</span></p><p>Offline-first routine tracking with local prayer calculations and Android alarms.</p></details>
         </div>
       </section>
 
