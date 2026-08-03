@@ -9,7 +9,7 @@ export function createSchedule(input = {}) {
 }
 
 export function createTimeSlot(input, fallbackId = `slot-${Date.now()}`) {
-  return { id: input.id || fallbackId, time: input.time || '', label: input.label || '', enabled: input.enabled !== false, notificationEnabled: Boolean(input.notificationEnabled), notificationOffsetMinutes: Number(input.notificationOffsetMinutes) || 0, prayerKey: input.prayerKey || null };
+  return { id: input.id || fallbackId, time: input.time || '', label: input.label || '', enabled: input.enabled !== false, notificationEnabled: Boolean(input.notificationEnabled), notificationOffsetMinutes: Number(input.notificationOffsetMinutes) || 0, alarmMode: input.alarmMode || 'notification', vibrationEnabled: input.vibrationEnabled !== false, snoozeEnabled: input.snoozeEnabled !== false, snoozeMinutes: Math.max(1, Number(input.snoozeMinutes) || 10), sound: input.sound || 'default', customSoundUri: input.customSoundUri || null, prayerKey: input.prayerKey || null };
 }
 
 export function scheduleApplies(scheduleInput, isoDate) {

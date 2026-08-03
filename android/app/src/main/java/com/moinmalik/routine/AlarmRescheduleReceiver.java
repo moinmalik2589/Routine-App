@@ -1,0 +1,1 @@
+package com.moinmalik.routine; import android.content.*; public class AlarmRescheduleReceiver extends BroadcastReceiver { public void onReceive(Context c,Intent i){ AlarmScheduler.rescheduleAll(c); } }

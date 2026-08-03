@@ -110,7 +110,7 @@ export class RoutineRepository {
     if (activity.id === 'gym' && fasting && weekday !== 'Friday') return 'Evening'; if (activity.id === 'bath') return weekday === 'Friday' ? 'Pre-Jummah' : fasting ? 'Evening' : 'Post-Gym';
     return slot.prayerKey ? (prayer[slot.prayerKey] || prayer[activity.prayerKey] || slot.time || activity.defaultTime) : (slot.time || activity.defaultTime);
   }
-  createOccurrence(activity, slot, time) { return { id: `${activity.id}:${slot.id}`, activityId: activity.id, activityName: activity.name, activityOrder: activity.order, timeSlotId: slot.id, time, label: slot.label || '', notificationEnabled: Boolean(slot.notificationEnabled), notificationOffsetMinutes: slot.notificationOffsetMinutes || 0, notificationId: notificationId(activity, slot) }; }
+  createOccurrence(activity, slot, time) { return { id: `${activity.id}:${slot.id}`, activityId: activity.id, activityName: activity.name, activityOrder: activity.order, timeSlotId: slot.id, time, label: slot.label || '', notificationEnabled: Boolean(slot.notificationEnabled), notificationOffsetMinutes: slot.notificationOffsetMinutes || 0, alarmMode: slot.alarmMode, vibrationEnabled: slot.vibrationEnabled, snoozeEnabled: slot.snoozeEnabled, snoozeMinutes: slot.snoozeMinutes, sound: slot.sound, customSoundUri: slot.customSoundUri, notificationId: notificationId(activity, slot) }; }
 
   async ensureDay(date) {
     await this.ensureInitialized();

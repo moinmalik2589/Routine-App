@@ -1,0 +1,3 @@
+import test from 'node:test'; import assert from 'node:assert/strict'; import { stableAlarmId, createAlarmSpec } from '../src/alarms/alarm-model.js';
+test('alarm IDs are stable and distinct', () => { assert.equal(stableAlarmId('a'), stableAlarmId('a')); assert.notEqual(stableAlarmId('a'), stableAlarmId('b')); });
+test('alarm specification prevents duplicate identity and validates fallbacks', () => { const alarm = createAlarmSpec({ stableKey: '2026-01-01:wake', triggerAt: 10, mode: 'bad', sound: 'missing' }); assert.equal(alarm.mode, 'notification'); assert.equal(alarm.sound, 'default'); assert.equal(alarm.snoozeMinutes, 10); });
