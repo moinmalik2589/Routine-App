@@ -10,9 +10,10 @@
   <body>
     <div class="header-container">
       <div>
-        <h1>MOIN MALIK</h1>
+        <h1 id="userDisplayName">MOIN MALIK</h1>
         <div id="clock">Loading clock...</div>
         <div id="dayOfWeek"></div>
+        <button id="homeLocation" class="home-location" type="button" hidden></button>
       </div>
       <div class="right-controls">
         <button class="hamburger" id="menuButton" aria-label="Open menu" aria-expanded="false">☰</button>
@@ -20,7 +21,7 @@
           <button data-view="monthly-view">📅 Monthly Progress</button>
           <button data-view="activity-view">📊 Activity Progress</button>
           <button data-view="manage-view">⚙ Activity Management</button>
-          <button data-view="settings-view">👤 Profile &amp; Prayer Settings</button>
+          <button data-view="settings-view">👤 User Profile</button>
         </div>
         <div id="home-controls">
           <input type="date" id="datePicker" aria-label="Routine date">
@@ -106,33 +107,31 @@
       <section id="settings-view" class="view-section">
         <div class="card">
           <button class="home-btn" data-view="home-view">&larr; Back to Home</button>
-          <div class="center"><h2 class="management-title">Profile &amp; Prayer Settings</h2></div>
+          <div class="center"><h2 class="management-title">User Profile</h2></div>
+          <form id="nameForm" class="activity-form profile-name-form"><label>Your name<input id="settingsDisplayName" maxlength="80" required></label><button class="home-btn" type="submit">Save Name</button></form>
+          <p id="profile-status" class="summary" aria-live="polite"></p>
           <div id="location-summary" class="bottom-timings"></div>
           <button class="home-btn" id="changeLocation">Change Location</button>
+          <p><strong>Prayer calculation:</strong> <span id="automaticPrayerSummary"></span></p>
+          <details id="optionalAdjustments"><summary>Optional Prayer Time Adjustments</summary><p class="summary">Optional minute adjustments apply on top of the automatic local calculation.</p><form id="adjustmentForm" class="activity-form"><div id="settingsPrayerAdjustments" class="adjustment-grid"></div><label>Sehri before Fajr (minutes)<input id="settingsSehriOffset" type="number" min="0" max="180" step="1"></label><div class="form-actions"><button class="home-btn" type="submit">Save Adjustments</button><button class="nav-action" id="resetAdjustments" type="button">Reset to automatic defaults</button></div></form></details>
         </div>
       </section>
 
       <section id="location-view" class="view-section">
         <div class="card location-card">
-          <div class="center"><h2 class="management-title">Location Setup</h2><p>Prayer times are calculated locally and remain available offline.</p></div>
-          <button class="home-btn" id="detectLocation">Detect My Location</button>
-          <div class="location-divider">or choose a city manually</div>
+          <div class="center"><h2 class="management-title">Location Setup</h2><p>Enter your name, choose your location, and start your routine.</p></div>
+          <label>Your name<input id="profileDisplayName" maxlength="80" required></label>
+          <div class="location-choice-row"><button class="home-btn" id="detectLocation" type="button">Detect My Location</button><button class="home-btn" id="searchCityChoice" type="button">Search City</button><button class="home-btn" id="selectMapChoice" type="button">Select on Map</button></div>
+          <div id="mapPanel" hidden><div id="locationMap" class="location-map"></div><p id="mapProviderLabel" class="provider-label"></p><button class="nav-action" id="confirmMapLocation" type="button">Confirm Marker</button></div>
+          <div class="location-divider">Search City</div>
           <label class="location-search">City search<input type="search" id="locationSearch" value="Ghaziabad" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="locationResults"></label>
           <p id="locationProviderLabel" class="provider-label"></p><p id="locationProviderMessage" class="summary" aria-live="polite"></p>
           <div id="locationResults" class="location-results" role="listbox"></div>
           <form id="locationForm" class="activity-form">
             <input id="profilePlaceId" type="hidden"><input id="profileFormattedAddress" type="hidden">
-            <label>City<input id="profileCity" required></label><label>State<input id="profileState"></label><label>Country<input id="profileCountry" required></label>
-            <label>Latitude<input id="profileLatitude" type="number" step="any" required></label><label>Longitude<input id="profileLongitude" type="number" step="any" required></label>
-            <label>IANA timezone<input id="profileTimezone" required></label>
-            <label>Calculation method<select id="profileMethod"></select></label><label>Madhab<select id="profileMadhab"></select></label>
-            <label>High-latitude rule<select id="profileHighLatitudeRule"></select></label><label>Polar-circle resolution<select id="profilePolarCircle"></select></label>
-            <label>Shafaq setting<select id="profileShafaq"></select></label>
-            <label>Fajr angle override<input id="profileFajrAngle" type="number" min="0" max="30" step="0.1" placeholder="Method default"></label>
-            <label>Isha angle override<input id="profileIshaAngle" type="number" min="0" max="30" step="0.1" placeholder="Method default"></label>
-            <label>Isha interval override<input id="profileIshaInterval" type="number" min="0" max="300" step="1" placeholder="Method default"></label>
-            <label>Sehri before Fajr (minutes)<input id="profileSehriOffset" type="number" min="0" max="180" step="1"></label>
-            <fieldset><legend>Manual minute adjustments</legend><div id="prayerAdjustments" class="adjustment-grid"></div></fieldset>
+            <div class="confirmed-location"><label>City<input id="profileCity" readonly required></label><label>State/region<input id="profileState" readonly></label><label>Country<input id="profileCountry" readonly required></label><label>Timezone<input id="profileTimezone" readonly required></label></div>
+            <details class="development-advanced"><summary>Advanced / Developer coordinates</summary><label>Latitude<input id="profileLatitude" type="number" step="any" required></label><label>Longitude<input id="profileLongitude" type="number" step="any" required></label></details>
+            <input id="profileMethod" type="hidden"><input id="profileMadhab" type="hidden"><input id="profileHighLatitudeRule" type="hidden"><input id="profilePolarCircle" type="hidden"><input id="profileShafaq" type="hidden"><input id="profileFajrAngle" type="hidden"><input id="profileIshaAngle" type="hidden"><input id="profileIshaInterval" type="hidden"><input id="profileSehriOffset" type="hidden"><div id="prayerAdjustments" hidden></div>
             <p id="location-status" class="summary" aria-live="polite"></p>
             <div id="prayerDiagnostics" class="development-diagnostics" hidden></div>
             <div id="prayerInspector" class="development-inspector" hidden><h3>Prayer Calculation Inspector</h3><label>Inspection date<input id="inspectorDate" type="date"></label><button class="nav-action" id="runPrayerInspector" type="button">Inspect Calculation</button><pre id="prayerInspectorOutput"></pre></div>

@@ -2,7 +2,8 @@ import { isInRanges, todayIso, weekdayFor } from '../date-utils.js';
 import { DEFAULT_ACTIVITIES, DEFAULT_FASTING_RANGES, PROTECTED_ACTIVITY_RULES, PROTECTED_PRAYER_ACTIVITY_IDS, SYSTEM_ALARM_IDS, defaultPrayerTimings } from './defaults.js';
 import { SCHEMA_VERSION, STORE_NAMES, createActivityDefinition, createCompletionRecord, createDailyAlarmState, createDailyRoutineRecord, createOccurrenceCompletionRecord, createUserSettings } from './models.js';
 import { scheduleApplies } from '../scheduling/schedule.js';
-import { DEFAULT_LOCATION_SUGGESTION, createLocationProfile } from '../location/location-model.js';
+import { DEFAULT_LOCATION_SUGGESTION, createLocationProfile, normalizeStoredProfile } from '../location/location-model.js';
+import { automaticPrayerSettings, resetPrayerAdjustments } from '../prayer/automatic-settings.js';
 import { PrayerCacheService } from '../prayer/prayer-cache.js';
 import { PRAYER_CALCULATOR_VERSION, PRAYER_CACHE_FORMAT_VERSION, prayerSettingsFingerprint } from '../prayer/prayer-calculator.js';
 
@@ -60,10 +61,10 @@ export class RoutineRepository {
   async getSchemaVersion() { await this.ensureInitialized(); return this.adapter.get(STORE_NAMES.metadata, 'schemaVersion'); }
   async getSettings() { await this.ensureInitialized(); return this.adapter.get(STORE_NAMES.settings, 'default'); }
   async updateSettings(changes) { const settings = { ...(await this.getSettings()), ...changes, id: 'default', updatedAt: now() }; await this.adapter.put(STORE_NAMES.settings, settings); return settings; }
-  async getLocationProfile() { await this.ensureInitialized(); return this.adapter.get(STORE_NAMES.profiles, 'default'); }
+  async getLocationProfile() { await this.ensureInitialized(); const stored = await this.adapter.get(STORE_NAMES.profiles, 'default'); return normalizeStoredProfile(stored); }
   async saveLocationProfile(input, { currentDate = todayIso(), warmCache = true } = {}) {
     await this.ensureInitialized(); const previous = await this.getLocationProfile(); const previousFingerprint = previous ? prayerSettingsFingerprint(previous) : null;
-    const profile = createLocationProfile({ ...input, locationVersion: previous ? String((Number(previous.locationVersion) || 0) + 1) : '1' });
+    const profile = createLocationProfile({ ...previous, ...input, ...automaticPrayerSettings(input), displayName: input.displayName || previous?.displayName, adjustments: input.adjustments || previous?.adjustments || resetPrayerAdjustments(), sehriOffsetMinutes: input.sehriOffsetMinutes ?? previous?.sehriOffsetMinutes ?? 30, createdAt: previous?.createdAt, locationVersion: previous ? String((Number(previous.locationVersion) || 0) + 1) : '1' });
     try {
       await this.adapter.put(STORE_NAMES.profiles, profile);
       const invalidatedPrayerRecords = await this.prayerCache.invalidateFuture(currentDate, previousFingerprint);
@@ -76,6 +77,8 @@ export class RoutineRepository {
       throw error;
     }
   }
+  async saveDisplayName(displayName) { await this.ensureInitialized(); const profile = await this.getLocationProfile(); if (!profile) throw new Error('Complete location setup before updating your name.'); const name = String(displayName || '').trim(); if (!name) throw new Error('Your name is required.'); const updated = { ...profile, displayName: name, updatedAt: now() }; await this.adapter.put(STORE_NAMES.profiles, updated); return updated; }
+  async savePrayerAdjustments({ adjustments, sehriOffsetMinutes }, options = {}) { const profile = await this.getLocationProfile(); if (!profile) throw new Error('Complete profile setup first.'); return this.saveLocationProfile({ ...profile, adjustments: { ...resetPrayerAdjustments(), ...(adjustments || {}) }, sehriOffsetMinutes }, options); }
   async getPrayerProfile() { return await this.getLocationProfile() || createLocationProfile(DEFAULT_LOCATION_SUGGESTION); }
   async ensurePrayerCalculatorCurrent(currentDate = todayIso()) { await this.ensureInitialized(); if (this.prayerVersionPromise) return this.prayerVersionPromise; this.prayerVersionPromise = (async () => { const stored = await this.adapter.get(STORE_NAMES.metadata, 'prayerCalculatorVersion'); if (stored?.value === PRAYER_CALCULATOR_VERSION) return { upgraded: false, invalidated: 0, regenerated: 0 }; const profile = await this.getLocationProfile(); if (!profile) { await this.adapter.put(STORE_NAMES.metadata, { key: 'prayerCalculatorVersion', value: PRAYER_CALCULATOR_VERSION, cacheFormatVersion: PRAYER_CACHE_FORMAT_VERSION, updatedAt: now() }); return { upgraded: true, invalidated: 0, regenerated: 0 }; } const invalidated = await this.prayerCache.invalidateIncompatibleFuture(currentDate); const generated = await this.prayerCache.warmCurrentAndNext(currentDate, profile); const snapshots = await this.refreshPrayerDrivenSnapshots(currentDate, profile); await this.adapter.put(STORE_NAMES.metadata, { key: 'prayerCalculatorVersion', value: PRAYER_CALCULATOR_VERSION, cacheFormatVersion: PRAYER_CACHE_FORMAT_VERSION, updatedAt: now() }); return { upgraded: true, invalidated, regenerated: generated.length, snapshots }; })().catch((error) => { this.prayerVersionPromise = null; throw error; }); return this.prayerVersionPromise; }
   async warmPrayerCache(currentDate = todayIso()) { await this.ensureInitialized(); this.cacheWarmPromise = this.prayerCache.warmCurrentAndNext(currentDate, await this.getPrayerProfile()).catch((error) => { this.logger.warn('Prayer cache warming failed; routine loading will use on-demand or fallback timings.', error); return []; }); return this.cacheWarmPromise; }

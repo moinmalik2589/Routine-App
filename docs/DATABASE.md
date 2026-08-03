@@ -65,3 +65,5 @@ Normal startup never deletes data. `resetDevelopmentDatabase(adapter)` remains d
 ## Development diagnostics
 
 Development builds log only database name, physical version, application schema version, object-store names, connection state, repair status and active transaction count. Location/profile values are not logged. No reset control is exposed.
+
+The `profiles/default` record includes `displayName`, compatibility `timeZone` plus canonical `timezone`, location identity/address fields, and creation/update timestamps. Existing records are normalized without deleting or recreating the profile store. Location saves retain the name and creation time, increment `locationVersion`, apply the automatic regional method plus Hanafi defaults, and preserve historical routines and completions.

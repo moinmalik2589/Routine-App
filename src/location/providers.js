@@ -28,7 +28,7 @@ export const DEVELOPMENT_CITIES = Object.freeze([
   { placeId: 'mock-chennai', displayName: 'Chennai', formattedAddress: 'Chennai, Tamil Nadu, India', city: 'Chennai', state: 'Tamil Nadu', country: 'India', latitude: 13.0827, longitude: 80.2707 },
   { placeId: 'mock-london', displayName: 'London', formattedAddress: 'London, England, United Kingdom', city: 'London', state: 'England', country: 'United Kingdom', latitude: 51.5074, longitude: -0.1278 },
   { placeId: 'mock-dubai', displayName: 'Dubai', formattedAddress: 'Dubai, Dubai, United Arab Emirates', city: 'Dubai', state: 'Dubai', country: 'United Arab Emirates', latitude: 25.2048, longitude: 55.2708 },
-].map((item) => Object.freeze({ ...item, timeZone: resolveTimezone(item.latitude, item.longitude), label: item.formattedAddress, locationSource: 'development-mock', providerLabel: 'Development city data' })));
+].map((item) => Object.freeze({ ...item, displayName: item.city, timeZone: resolveTimezone(item.latitude, item.longitude), label: item.formattedAddress, locationSource: 'development-mock', providerLabel: 'Development city data' })));
 
 export class DevelopmentLocationProvider {
   mode = 'mock';
@@ -41,7 +41,7 @@ export class DevelopmentLocationProvider {
     return DEVELOPMENT_CITIES.filter((item) => `${item.city} ${item.state} ${item.country}`.toLocaleLowerCase().includes(term)).map((item) => ({ ...item }));
   }
   async details(placeId) { const place = DEVELOPMENT_CITIES.find((item) => item.placeId === placeId); if (!place) throw new Error('Mock city was not found.'); return { ...place }; }
-  async reverseGeocode({ latitude, longitude }) { return { city: '', state: '', country: '', latitude, longitude, timeZone: resolveTimezone(latitude, longitude), locationSource: 'manual-coordinates' }; }
+  async reverseGeocode({ latitude, longitude }) { const nearest = DEVELOPMENT_CITIES.reduce((best, item) => ((item.latitude - latitude) ** 2 + (item.longitude - longitude) ** 2 < (best.latitude - latitude) ** 2 + (best.longitude - longitude) ** 2 ? item : best)); return { ...nearest, latitude, longitude, timeZone: resolveTimezone(latitude, longitude), locationSource: 'development-reverse-geocode' }; }
 }
 
 function sessionId() { return globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`; }

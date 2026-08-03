@@ -1,5 +1,13 @@
 # Location and offline prayer setup
 
+## Normal user flow
+
+First run asks only for a display name and a confirmed location. Users can detect their foreground location, search worldwide cities, or select a map marker. Coordinates, timezone, calculation method, madhab and high-latitude details are derived automatically. Coordinates remain in a collapsed Advanced/Developer section; expert prayer controls are not part of onboarding.
+
+The User Profile screen edits the saved name, changes location, shows the automatic method and Hanafi indicator, and contains optional minute adjustments collapsed by default. Existing development profiles whose old `displayName` was the city are presented as `MOIN MALIK` without changing stored routines.
+
+Automatic method defaults are: India/Pakistan/Bangladesh → Karachi; United Kingdom → Moonsighting Committee; UAE → Dubai; Qatar → Qatar; Kuwait → Kuwait; Saudi Arabia → Umm al-Qura; Singapore → Singapore; Turkey → Turkey; Iran → Tehran; Egypt → Egyptian; US/Canada → North America/ISNA; unknown countries → Muslim World League. New and location-updated profiles use Hanafi and recommended high-latitude handling.
+
 ## Provider design
 
 `createLocationProvider()` is the only provider-selection factory. A configured `VITE_GOOGLE_PLACES_API_KEY` selects the provider labelled “Google Places”; no key selects “Development city data”. Both use the same debounced autocomplete controller, keyboard navigation, selection and confirmation flow.
@@ -21,6 +29,8 @@ Search begins after two characters. Unknown text displays “No matching develop
 3. Restrict web keys to exact HTTP referrers and Places API (New).
 4. Android keys normally require package `com.moinmalik.routine` plus debug/release signing-certificate restrictions. A production webview REST deployment must use a native or secured proxy boundary capable of enforcing those restrictions; never ship an unrestricted key.
 5. Put the restricted development key in local `.env`. Never commit `.env`.
+
+Enable **Places API (New)** and **Maps JavaScript API** for browser development. The included `RoutineNativeMaps` bridge boundary allows a native implementation to use **Maps SDK for Android** without changing UI code. Use a separate Android-restricted key in the uncommitted `google_maps_key` build resource, restricted to package `com.moinmalik.routine` and exact debug/release SHA-1 certificates. Enable **Geocoding API** only if it replaces the current Places details/nearby reverse-geocoding boundary.
 
 Autocomplete uses a session token and requests only prediction identity/text. Place Details is requested only after selection and is limited to ID, display name, formatted address, address components and coordinates. Search is biased toward India but not country-restricted.
 

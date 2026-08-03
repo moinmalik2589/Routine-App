@@ -1,5 +1,7 @@
 # Moin Routine App Roadmap
 
+- [x] Simplified name-and-location onboarding, User Profile, automatic regional prayer settings, optional collapsed adjustments, Home city label, and map-provider boundary.
+
 ## Phase 1 — Vite/Capacitor foundation and UI migration
 
 Status: Complete
