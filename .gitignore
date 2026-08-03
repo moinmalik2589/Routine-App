@@ -9,3 +9,6 @@ dist/
 android/.gradle/
 android/local.properties
 android/app/build/
+*.jks
+*.keystore
+key.properties
