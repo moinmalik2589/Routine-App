@@ -92,6 +92,7 @@ export class IndexedDbAdapter {
   getAll(store) { return this.transaction([store], 'readonly', ({ [store]: objectStore }) => requestResult(objectStore.getAll())); }
   put(store, value) { return this.transaction([store], 'readwrite', ({ [store]: objectStore }) => requestResult(objectStore.put(structuredClone(value)))); }
   delete(store, key) { return this.transaction([store], 'readwrite', ({ [store]: objectStore }) => requestResult(objectStore.delete(key))); }
+  replaceAll(data) { const names = Object.values(STORE_NAMES); return this.transaction(names, 'readwrite', async (stores) => { for (const name of names) { await requestResult(stores[name].clear()); for (const value of data[name] || []) await requestResult(stores[name].put(structuredClone(value))); } }); }
   close() { if (this.activeTransactions) throw new Error('Cannot close IndexedDB while transactions are active.'); this.connectionState = 'closing'; this.db?.close(); this.invalidateConnection(); }
   async destroy() { this.close(); await requestResult(this.indexedDB.deleteDatabase(this.name)); }
   async diagnostics() { const db = await this.open(), metadata = await this.get(STORE_NAMES.metadata, 'schemaVersion'); return { databaseName: this.name, physicalVersion: db.version, applicationSchemaVersion: metadata?.value || null, objectStores: [...db.objectStoreNames], connectionState: this.connectionState, repairRequired: this.repairRequired, repairPerformed: this.repairPerformed, activeTransactions: this.activeTransactions }; }
