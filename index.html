@@ -101,6 +101,7 @@
           <p id="management-status" class="summary" aria-live="polite"></p>
           <div id="activity-management-list" class="management-list"></div>
           <p class="management-help">Use arrows to reorder. Protected prayer mappings cannot be removed or changed.</p>
+          <label class="global-prayer-toggle"><input id="prayerRoutineToggle" type="checkbox"> Include Namaz &amp; Sehri in my routine</label>
         </div>
       </section>
 
@@ -110,12 +111,11 @@
           <div class="center"><h2 class="management-title">User Profile</h2></div>
           <form id="nameForm" class="activity-form profile-name-form"><label>Your name<input id="settingsDisplayName" maxlength="80" required></label><button class="home-btn" type="submit">Save Name</button></form>
           <p id="profile-status" class="summary" aria-live="polite"></p>
-          <div id="location-summary" class="bottom-timings"></div>
-          <button class="home-btn" id="changeLocation">Change Location</button>
-          <p><strong>Prayer calculation:</strong> <span id="automaticPrayerSummary"></span></p>
-          <details id="optionalAdjustments"><summary>Optional Prayer Time Adjustments</summary><p class="summary">Optional minute adjustments apply on top of the automatic local calculation.</p><form id="adjustmentForm" class="activity-form"><div id="settingsPrayerAdjustments" class="adjustment-grid"></div><label>Sehri before Fajr (minutes)<input id="settingsSehriOffset" type="number" min="0" max="180" step="1"></label><div class="form-actions"><button class="home-btn" type="submit">Save Adjustments</button><button class="nav-action" id="resetAdjustments" type="button">Reset to automatic defaults</button></div></form></details>
+          <div id="prayerProfileSettings"><div id="location-summary" class="bottom-timings"></div><button class="home-btn" id="changeLocation">Change Location</button><p><strong>Prayer calculation:</strong> <span id="automaticPrayerSummary"></span></p><details id="optionalAdjustments"><summary>Optional Prayer Time Adjustments</summary><p class="summary">Optional minute adjustments apply on top of the automatic local calculation.</p><form id="adjustmentForm" class="activity-form"><div id="settingsPrayerAdjustments" class="adjustment-grid"></div><label>Sehri before Fajr (minutes)<input id="settingsSehriOffset" type="number" min="0" max="180" step="1"></label><div class="form-actions"><button class="home-btn" type="submit">Save Adjustments</button><button class="nav-action" id="resetAdjustments" type="button">Reset to automatic defaults</button></div></form></details></div>
         </div>
       </section>
+
+      <section id="routine-choice-view" class="view-section"><div class="card"><div class="center"><h2 class="management-title">Choose your routine</h2><p>You can change activities later.</p></div><div class="routine-choice-grid"><button class="home-btn" id="choosePredefined" type="button"><strong>Use Predefined Routine</strong><span>Start with the complete routine.</span></button><button class="home-btn" id="chooseCustom" type="button"><strong>Create My Own Routine</strong><span>Start with prayer activities and add your own.</span></button></div><p id="routine-choice-status" class="summary"></p></div></section>
 
       <section id="location-view" class="view-section">
         <div class="card location-card">

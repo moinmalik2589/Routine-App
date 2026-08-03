@@ -5,7 +5,7 @@ const definitions = [
   { id: 'tahajjud', name: 'Tahajjud', defaultTime: '3:35 AM' },
   { id: 'sehri', name: 'Sehri', timeSlots: [{ id: 'sehri-time-1', prayerKey: 'sehri', label: 'Sehri' }], protected: true, system: true },
   { id: 'fajr', name: 'Fajr Namaz', prayerKey: 'fajrPrayer', alarmId: 'FAJR', protected: true, system: true },
-  { id: 'nap', name: 'Nap', defaultTime: '5:35 AM', prayerKey: 'nap', protected: true, system: true },
+  { id: 'nap', name: 'Nap', defaultTime: '5:35 AM' },
   { id: 'wake-up-again', name: 'Again Wakeup', defaultTime: '6:30 AM', prayerKey: 'wakeAgain', alarmId: 'WAKEUP_AGAIN' },
   { id: 'gym', name: 'Gym', defaultTime: '7:30 AM', prayerKey: 'gym' },
   { id: 'bath', name: 'Bath', defaultTime: 'Post-Gym' },

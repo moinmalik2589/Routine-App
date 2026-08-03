@@ -16,7 +16,7 @@ export const STORE_NAMES = Object.freeze({
 });
 
 export function createUserSettings(overrides = {}) {
-  return { id: 'default', timeZone: 'Asia/Kolkata', progressMode: 'up-to-today', createdAt: new Date().toISOString(), ...overrides };
+  return { id: 'default', timeZone: 'Asia/Kolkata', progressMode: 'up-to-today', prayerRoutineEnabled: true, onboardingChoice: null, createdAt: new Date().toISOString(), ...overrides };
 }
 
 export function createActivityDefinition(input) {
