@@ -1,6 +1,7 @@
 import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
+  reload,
   sendEmailVerification,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
@@ -11,6 +12,7 @@ import {
 import {
   doc,
   getDoc,
+  onSnapshot,
   serverTimestamp,
   setDoc,
 } from 'firebase/firestore';
@@ -68,6 +70,7 @@ export class AuthService {
       {
         uid: credential.user.uid,
         displayName: name,
+        authDisplayNameLastSeen: name,
         email: credential.user.email,
         emailVerified: credential.user.emailVerified,
         role: 'user',
@@ -108,35 +111,102 @@ export class AuthService {
   }
 
   async ensureUserProfile(user) {
-    const userRef = doc(this.firestore, 'users', user.uid);
+    await reload(user);
+
+    const userRef = doc(
+      this.firestore,
+      'users',
+      user.uid,
+    );
+
     const snapshot = await getDoc(userRef);
-    const existing = snapshot.exists() ? snapshot.data() : {};
+    const existing = snapshot.exists()
+      ? snapshot.data()
+      : {};
+
+    const authName = user.displayName?.trim() || '';
+    const lastSeenAuthName =
+      existing.authDisplayNameLastSeen || '';
+
+    /*
+     * If the Authentication display name changed outside this app,
+     * prefer it once and copy it to Firestore.
+     *
+     * Otherwise Firestore stays authoritative, which means editing
+     * users/{uid}.displayName in Firebase Console updates the app too.
+     */
+    const authChangedExternally =
+      authName &&
+      authName !== lastSeenAuthName;
+
+    const displayName = authChangedExternally
+      ? authName
+      : (
+          existing.displayName ||
+          authName ||
+          user.email?.split('@')[0] ||
+          'Routine User'
+        );
 
     const record = {
       uid: user.uid,
-      displayName:
-        user.displayName ||
-        existing.displayName ||
-        user.email?.split('@')[0] ||
-        'Routine User',
+      displayName,
+      authDisplayNameLastSeen: authName,
       email: user.email || existing.email || '',
       emailVerified: user.emailVerified,
       role: existing.role || 'user',
-      accountStatus: existing.accountStatus || 'active',
-      subscriptionStatus: existing.subscriptionStatus || 'trial',
-      createdAt: existing.createdAt || serverTimestamp(),
+      accountStatus:
+        existing.accountStatus || 'active',
+      subscriptionStatus:
+        existing.subscriptionStatus || 'trial',
+      createdAt:
+        existing.createdAt || serverTimestamp(),
       updatedAt: serverTimestamp(),
       lastLoginAt: serverTimestamp(),
       app: 'Moin Routine',
       platform: 'web-pwa',
     };
 
-    await setDoc(userRef, record, { merge: true });
+    await setDoc(
+      userRef,
+      record,
+      { merge: true },
+    );
 
     return {
       ...existing,
       ...record,
     };
+  }
+
+  watchProfile(user, onChange) {
+    const userRef = doc(
+      this.firestore,
+      'users',
+      user.uid,
+    );
+
+    return onSnapshot(
+      userRef,
+      (snapshot) => {
+        if (!snapshot.exists()) return;
+        onChange(snapshot.data());
+      },
+      (error) => {
+        console.warn(
+          'Firebase profile listener stopped.',
+          error,
+        );
+      },
+    );
+  }
+
+  async refreshCurrentProfile() {
+    const user = this.auth.currentUser;
+
+    if (!user) return null;
+
+    return this.ensureUserProfile(user);
   }
 
   async updateDisplayName(displayName) {
@@ -160,6 +230,7 @@ export class AuthService {
       {
         uid: user.uid,
         displayName: name,
+        authDisplayNameLastSeen: name,
         email: user.email || '',
         emailVerified: user.emailVerified,
         updatedAt: serverTimestamp(),

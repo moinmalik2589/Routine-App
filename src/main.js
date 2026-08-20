@@ -20,14 +20,29 @@ import { homePrayerDisplayValues } from './ui/prayer-display.js';
 import { profileHeading, profileLocationLabel } from './ui/profile-presentation.js';
 import { firebaseConfigured, firebaseServices } from './auth/firebase-client.js'; import { AuthService } from './auth/auth-service.js';
 import { AdminService } from './admin/admin-service.js';
+import { CloudSyncService } from './sync/cloud-sync-service.js';
 import { NativeAlarmService } from './alarms/native-alarm-service.js'; import { AlarmCoordinator } from './alarms/alarm-coordinator.js';
 
 const state = { day: null, activities: [], fastingRanges: [], monthDays: [], activityDays: [], analyticsDays: [], profile: null, settings: null, account: null, editingSlots: [], progressToToday: true, activeView: 'home-view', locationDraft: { selected: null, coordinatesChanged: false }, locationResults: [], mapDraft: null, enablingPrayer: false, streaks: new Map(), streakRunToken: 0 };
 const $ = (id) => document.getElementById(id);
 const searchProvider = createLocationProvider(); const geolocationProvider = new BrowserGeolocationProvider(); const mapProvider = createMapProvider({ reverseGeocoder: searchProvider });
 const firebaseRuntime = firebaseConfigured ? firebaseServices() : null; const authService = firebaseRuntime ? new AuthService(firebaseRuntime) : null; const adminService = firebaseRuntime ? new AdminService(firebaseRuntime) : null;
-const nativeAlarmService = new NativeAlarmService(); const alarmCoordinator = new AlarmCoordinator(nativeAlarmService);
-let dailyLoader; let autocompleteController; let autocompleteBinding; let mountedMap;
+const nativeAlarmService = new NativeAlarmService();
+const alarmCoordinator = new AlarmCoordinator(nativeAlarmService);
+
+const cloudSync = firebaseRuntime
+  ? new CloudSyncService({
+      firestore: firebaseRuntime.firestore,
+      backupService,
+    })
+  : null;
+
+let dailyLoader;
+let autocompleteController;
+let autocompleteBinding;
+let mountedMap;
+let stopFirebaseProfileWatch = null;
+let firebaseProfileRefreshTimer = null;
 const alarmActivity = (value) => value === 'fast' ? ['FAST_START', 'FAST_END'] : (state.activities.find(({ id }) => id === value)?.timeSlots || []).filter(({ enabled, notificationEnabled }) => enabled && notificationEnabled).map((slot) => `${state.activities.find(({ id }) => id === value).alarmId || `ACTIVITY:${value}`}:${slot.id}`);
 
 function escapeHtml(value) { return String(value).replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[char]); }
@@ -397,10 +412,15 @@ function readPrayerFormUnchecked() { return { placeId: $('profilePlaceId').value
 function readLocationForm() { if (!canActivateLocationDraft({ selectedPlace: state.locationDraft.selected, coordinatesChanged: state.locationDraft.coordinatesChanged })) throw new Error('Select a city suggestion or confirm validated manual coordinates.'); return readPrayerFormUnchecked(); }
 
 function renderProfileIdentity() {
-  const firebaseName = state.account?.displayName?.trim();
-  $('userDisplayName').textContent = firebaseName || profileHeading(state.profile);
+  const firebaseName =
+    state.account?.displayName?.trim();
 
-  const location = profileLocationLabel(state.profile);
+  $('userDisplayName').textContent =
+    firebaseName || profileHeading(state.profile);
+
+  const location =
+    profileLocationLabel(state.profile);
+
   $('homeLocation').textContent = location;
   $('homeLocation').hidden = !location;
 }
@@ -522,6 +542,119 @@ function initialiseControls() {
 }
 
 function cloneSlots(slots) { return structuredClone(slots); }
+
+const LOCAL_OWNER_KEY = 'moinRoutineLocalOwnerUid';
+
+async function prepareLocalDataForUser(user) {
+  const localOwner = localStorage.getItem(
+    LOCAL_OWNER_KEY,
+  );
+
+  if (localOwner && localOwner !== user.uid) {
+    await deleteAllLocalData();
+
+    localStorage.setItem(
+      LOCAL_OWNER_KEY,
+      user.uid,
+    );
+
+    // Recreate a clean IndexedDB connection before restoring the
+    // newly signed-in user's cloud data.
+    location.reload();
+    return false;
+  }
+
+  if (!localOwner) {
+    localStorage.setItem(
+      LOCAL_OWNER_KEY,
+      user.uid,
+    );
+  }
+
+  return true;
+}
+
+async function applyFirebaseProfile(record) {
+  if (!record) return;
+
+  const previousName =
+    state.account?.displayName || '';
+
+  state.account = {
+    ...(state.account || {}),
+    ...record,
+  };
+
+  const nextName =
+    record.displayName?.trim() || '';
+
+  if (
+    nextName &&
+    state.profile &&
+    state.profile.displayName !== nextName
+  ) {
+    state.profile =
+      await routineService.saveDisplayName(nextName);
+  }
+
+  if (nextName !== previousName) {
+    renderProfileIdentity();
+
+    if (
+      state.activeView === 'settings-view'
+    ) {
+      renderSimpleSettings();
+    }
+  }
+}
+
+function startFirebaseProfileSync(user) {
+  stopFirebaseProfileWatch?.();
+
+  stopFirebaseProfileWatch =
+    authService.watchProfile(
+      user,
+      (record) => {
+        applyFirebaseProfile(record)
+          .catch((error) => {
+            console.warn(
+              'Firebase profile could not be applied.',
+              error,
+            );
+          });
+      },
+    );
+
+  window.clearInterval(
+    firebaseProfileRefreshTimer,
+  );
+
+  firebaseProfileRefreshTimer =
+    window.setInterval(async () => {
+      if (!navigator.onLine) return;
+
+      try {
+        const record =
+          await authService.refreshCurrentProfile();
+
+        await applyFirebaseProfile(record);
+      } catch (error) {
+        console.warn(
+          'Firebase profile refresh failed.',
+          error,
+        );
+      }
+    }, 60_000);
+}
+
+function scheduleCloudSave(delay = 1200) {
+  const uid = firebaseRuntime?.auth?.currentUser?.uid;
+
+  if (!uid || !cloudSync) return;
+
+  cloudSync.schedulePush(uid, delay);
+}
+
 async function bootstrap() {
   initialiseControls();
   dailyLoader = new DailyLoadController({ repository: routineService, onLoading: (loading) => { setDailyLoading(loading); if (loading) { state.day = null; $('routine-list').innerHTML = '<i>Loading data...</i>'; $('bottom-timings').hidden = true; } }, onSuccess: (day) => { state.day = day; renderDay(); updatePrayerDiagnostics(); }, onError: showDailyError });
@@ -545,6 +678,10 @@ async function bootstrap() {
       return;
     }
 
+    if (!(await prepareLocalDataForUser(user))) {
+      return;
+    }
+
     let access;
 
     try {
@@ -552,7 +689,11 @@ async function bootstrap() {
         ? await authService.access(user)
         : authService.cachedAccess(user);
     } catch (error) {
-      console.warn('Online account check failed.', error);
+      console.warn(
+        'Online account check failed.',
+        error,
+      );
+
       access = authService.cachedAccess(user);
     }
 
@@ -562,8 +703,10 @@ async function bootstrap() {
       showView('auth-view');
 
       $('authStatus').textContent = {
-        suspended: 'This account has been suspended.',
-        deactivated: 'This account has been deactivated.',
+        suspended:
+          'This account has been suspended.',
+        deactivated:
+          'This account has been deactivated.',
         'reconnect-required':
           'Connect to the internet once so your account can be verified.',
         'account-missing':
@@ -576,8 +719,27 @@ async function bootstrap() {
     state.account = access.record;
     $('menuButton').hidden = false;
 
+    if (navigator.onLine && cloudSync) {
+      try {
+        const syncResult =
+          await cloudSync.restoreIfNewer(user.uid);
+
+        if (syncResult.restored) {
+          console.info(
+            '[Cloud Sync] Previous routine data restored.',
+          );
+        }
+      } catch (error) {
+        console.warn(
+          '[Cloud Sync] Restore skipped.',
+          error,
+        );
+      }
+    }
+
     const token = await user.getIdTokenResult();
-    $('adminMenuButton').hidden = token.claims.admin !== true;
+    $('adminMenuButton').hidden =
+      token.claims.admin !== true;
     const initialization = await routineService.initialize(); if (import.meta.env.DEV) console.info('[development] IndexedDB diagnostics', initialization.diagnostics);
     state.settings = await routineService.getSettings();
     await refreshDefinitions();
@@ -586,14 +748,37 @@ async function bootstrap() {
     if (
       state.profile &&
       state.account?.displayName &&
-      state.profile.displayName !== state.account.displayName
+      state.profile.displayName !==
+        state.account.displayName
     ) {
-      state.profile = await routineService.saveDisplayName(
-        state.account.displayName,
+      state.profile =
+        await routineService.saveDisplayName(
+          state.account.displayName,
+        );
+    }
+
+    if (firebaseRuntime?.auth?.currentUser) {
+      startFirebaseProfileSync(
+        firebaseRuntime.auth.currentUser,
       );
     }
 
     await routineService.ensurePrayerCalculatorCurrent();
+
+    if (
+      navigator.onLine &&
+      cloudSync &&
+      firebaseRuntime?.auth?.currentUser
+    ) {
+      cloudSync
+        .pushNow(firebaseRuntime.auth.currentUser.uid)
+        .catch((error) => {
+          console.warn(
+            '[Cloud Sync] Initial save failed.',
+            error,
+          );
+        });
+    }
     renderProfileIdentity(); if (state.profile && state.settings.onboardingChoice) { await fetchRoutine(); if (state.settings.prayerRoutineEnabled !== false) void routineService.warmPrayerCache(); void routineService.getStoredDays().then((days)=>alarmCoordinator.reschedule(days,state.profile,state.settings)); } else if (state.profile) { setDailyLoading(false); showView('routine-choice-view'); } else { setDailyLoading(false); openSimpleLocationSetup(false); }
   } catch (error) { console.error('Application database initialization failed.', error); setDailyLoading(false); showView('home-view'); showDailyError(error, $('datePicker').value || 'the selected date'); }
 }
@@ -626,3 +811,66 @@ document.addEventListener('click', (event) => {
   if (label.includes('backup')) trackEvent('backup_opened');
   if (label.includes('reminder')) trackEvent('reminders_opened');
 });
+
+
+// Keep the signed-in user's Firestore cloud copy current.
+// The debounce means several quick checkbox taps become one upload.
+document.addEventListener(
+  'change',
+  () => scheduleCloudSave(900),
+);
+
+document.addEventListener(
+  'submit',
+  () => scheduleCloudSave(1200),
+);
+
+document.addEventListener(
+  'click',
+  (event) => {
+    const control = event.target.closest(
+      'button, [role="button"]',
+    );
+
+    if (!control) return;
+
+    const text =
+      (control.textContent || '')
+        .trim()
+        .toLowerCase();
+
+    const likelyDataChange =
+      /save|add|delete|remove|confirm|toggle|complete|restore|enable|disable/.test(
+        text,
+      ) ||
+      control.matches(
+        '[data-completion], [data-alarm], [data-setting-action]',
+      );
+
+    if (likelyDataChange) {
+      scheduleCloudSave(1200);
+    }
+  },
+);
+
+window.setInterval(() => {
+  if (document.visibilityState === 'visible') {
+    scheduleCloudSave(0);
+  }
+}, 30_000);
+
+document.addEventListener(
+  'visibilitychange',
+  () => {
+    if (
+      document.visibilityState === 'hidden'
+    ) {
+      scheduleCloudSave(0);
+    }
+  },
+);
+
+window.addEventListener(
+  'online',
+  () => scheduleCloudSave(0),
+);

@@ -2,6 +2,7 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+
     match /users/{userId} {
       allow create: if request.auth != null
         && request.auth.uid == userId;
@@ -16,6 +17,15 @@ service cloud.firestore {
         && request.resource.data.accountStatus == resource.data.accountStatus;
 
       allow delete: if false;
+
+      /*
+       * Cloud routine data belongs only to the signed-in user.
+       * This covers cloudSync/meta and its chunks subcollection.
+       */
+      match /{document=**} {
+        allow read, write: if request.auth != null
+          && request.auth.uid == userId;
+      }
     }
   }
 }
