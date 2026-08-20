@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  // Works on GitHub Pages project URLs such as:
-  // https://username.github.io/repository-name/
+  // Relative asset paths let the same build work on GitHub Pages
+  // and on a normal domain without changing the repository name.
   base: './',
 });

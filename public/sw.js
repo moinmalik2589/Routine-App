@@ -1,30 +1,37 @@
-const CACHE = 'moin-routine-shell-v9-github-pages';
-const BASE = new URL('./', self.registration.scope).pathname;
-const appUrl = (path = '') => `${BASE}${path}`;
+const CACHE_NAME = 'moin-routine-v10';
+const APP_ROOT = new URL('./', self.registration.scope).pathname;
 
-const SHELL = [
-  appUrl(),
-  appUrl('index.html'),
-  appUrl('manifest.webmanifest'),
-  appUrl('icons/icon-192.png'),
-  appUrl('icons/icon-512.png'),
+const appPath = (file = '') => `${APP_ROOT}${file}`;
+
+const APP_SHELL = [
+  appPath(),
+  appPath('index.html'),
+  appPath('manifest.webmanifest'),
+  appPath('icons/icon-192.png'),
+  appPath('icons/icon-512.png'),
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE)
-      .then((cache) => cache.addAll(SHELL))
-      .then(() => self.skipWaiting())
+    caches
+      .open(CACHE_NAME)
+      .then((cache) => cache.addAll(APP_SHELL))
+      .then(() => self.skipWaiting()),
   );
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys()
-      .then((keys) => Promise.all(
-        keys.filter((key) => key !== CACHE).map((key) => caches.delete(key))
-      ))
-      .then(() => self.clients.claim())
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(
+          keys
+            .filter((key) => key !== CACHE_NAME)
+            .map((key) => caches.delete(key)),
+        ),
+      )
+      .then(() => self.clients.claim()),
   );
 });
 
@@ -34,11 +41,18 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        const copy = response.clone();
-        caches.open(CACHE).then((cache) => cache.put(event.request, copy));
+        if (response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, copy);
+          });
+        }
+
         return response;
       })
-      .catch(() => caches.match(event.request)
-        .then((cached) => cached || caches.match(appUrl('index.html'))))
+      .catch(async () => {
+        const cached = await caches.match(event.request);
+        return cached || caches.match(appPath('index.html'));
+      }),
   );
 });
