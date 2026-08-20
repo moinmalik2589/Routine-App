@@ -396,9 +396,19 @@ function openLocationSetup(editing = false) { const profile = state.profile || D
 function readPrayerFormUnchecked() { return { placeId: $('profilePlaceId').value || null, formattedAddress: $('profileFormattedAddress').value, displayName: $('profileCity').value, city: $('profileCity').value, state: $('profileState').value, country: $('profileCountry').value, latitude: $('profileLatitude').value, longitude: $('profileLongitude').value, timeZone: $('profileTimezone').value, calculationMethod: $('profileMethod').value, madhab: $('profileMadhab').value, highLatitudeRule: $('profileHighLatitudeRule').value, polarCircleResolution: $('profilePolarCircle').value, shafaq: $('profileShafaq').value, fajrAngleOverride: $('profileFajrAngle').value, ishaAngleOverride: $('profileIshaAngle').value, ishaIntervalOverride: $('profileIshaInterval').value, sehriOffsetMinutes: $('profileSehriOffset').value, adjustments: Object.fromEntries([...document.querySelectorAll('[data-adjustment]')].map((input) => [input.dataset.adjustment, Number(input.value) || 0])), locationSource: state.locationDraft.selected?.locationSource || 'manual-coordinates', locationVersion: state.profile?.locationVersion || 'inspection' }; }
 function readLocationForm() { if (!canActivateLocationDraft({ selectedPlace: state.locationDraft.selected, coordinatesChanged: state.locationDraft.coordinatesChanged })) throw new Error('Select a city suggestion or confirm validated manual coordinates.'); return readPrayerFormUnchecked(); }
 
-function renderProfileIdentity() { $('userDisplayName').textContent = profileHeading(state.profile); const location = profileLocationLabel(state.profile); $('homeLocation').textContent = location; $('homeLocation').hidden = !location; }
+function renderProfileIdentity() {
+  const firebaseName = state.account?.displayName?.trim();
+  $('userDisplayName').textContent = firebaseName || profileHeading(state.profile);
+
+  const location = profileLocationLabel(state.profile);
+  $('homeLocation').textContent = location;
+  $('homeLocation').hidden = !location;
+}
 function fillSimpleLocationForm(profile, { selected = true } = {}) { const automatic = automaticPrayerSettings(profile); $('profileDisplayName').value = state.profile?.displayName || profile.displayName || ''; $('profilePlaceId').value = profile.placeId || ''; $('profileFormattedAddress').value = profile.formattedAddress || ''; $('profileCity').value = profile.city || ''; $('profileState').value = profile.state || ''; $('profileCountry').value = profile.country || ''; $('profileLatitude').value = profile.latitude ?? ''; $('profileLongitude').value = profile.longitude ?? ''; $('profileTimezone').value = profile.timeZone || resolveTimezone(profile.latitude, profile.longitude); $('profileMethod').value = automatic.calculationMethod; $('profileMadhab').value = automatic.madhab; $('profileHighLatitudeRule').value = automatic.highLatitudeRule; $('profilePolarCircle').value = automatic.polarCircleResolution; $('profileShafaq').value = automatic.shafaq; $('profileFajrAngle').value = ''; $('profileIshaAngle').value = ''; $('profileIshaInterval').value = ''; $('profileSehriOffset').value = profile.sehriOffsetMinutes ?? state.profile?.sehriOffsetMinutes ?? 30; state.locationDraft = { selected: selected ? structuredClone(profile) : null, coordinatesChanged: false }; }
-function renderSimpleSettings() { const profile = state.profile || DEFAULT_LOCATION_SUGGESTION; $('settingsDisplayName').value = profile.displayName || ''; $('prayerProfileSettings').hidden = state.settings?.prayerRoutineEnabled === false; $('location-summary').innerHTML = `<p>${escapeHtml(profile.city)}, ${escapeHtml(profile.state || profile.country)}</p><p>${escapeHtml(profile.timeZone)}</p>`; $('automaticPrayerSummary').textContent = `${profile.calculationMethod} · Hanafi · automatic high-latitude handling`; $('settingsSehriOffset').value = profile.sehriOffsetMinutes ?? 30; $('accountSummary').innerHTML = state.account ? `<p>Account: ${escapeHtml(state.account.accountStatus)}</p><p>Subscription: ${escapeHtml(state.account.subscriptionStatus)}${state.account.subscriptionEnd?.toDate ? ` · until ${state.account.subscriptionEnd.toDate().toLocaleDateString()}` : ''}</p>` : '<p>Development/local account</p>'; document.querySelectorAll('[data-settings-adjustment]').forEach((input) => { input.value = profile.adjustments?.[input.dataset.settingsAdjustment] || 0; }); }
+function renderSimpleSettings() {
+  const profile = state.profile || DEFAULT_LOCATION_SUGGESTION;
+  $('settingsDisplayName').value =
+    state.account?.displayName || profile.displayName || ''; $('prayerProfileSettings').hidden = state.settings?.prayerRoutineEnabled === false; $('location-summary').innerHTML = `<p>${escapeHtml(profile.city)}, ${escapeHtml(profile.state || profile.country)}</p><p>${escapeHtml(profile.timeZone)}</p>`; $('automaticPrayerSummary').textContent = `${profile.calculationMethod} · Hanafi · automatic high-latitude handling`; $('settingsSehriOffset').value = profile.sehriOffsetMinutes ?? 30; $('accountSummary').innerHTML = state.account ? `<p>Account: ${escapeHtml(state.account.accountStatus)}</p><p>Subscription: ${escapeHtml(state.account.subscriptionStatus)}${state.account.subscriptionEnd?.toDate ? ` · until ${state.account.subscriptionEnd.toDate().toLocaleDateString()}` : ''}</p>` : '<p>Development/local account</p>'; document.querySelectorAll('[data-settings-adjustment]').forEach((input) => { input.value = profile.adjustments?.[input.dataset.settingsAdjustment] || 0; }); }
 function openSimpleLocationSetup(editing = false) { const profile = state.profile || DEFAULT_LOCATION_SUGGESTION; fillSimpleLocationForm(profile); if (!state.profile) $('profileDisplayName').value = ''; $('locationSearch').value = profile.city; $('locationProviderLabel').textContent = searchProvider.label; $('locationProviderMessage').textContent = import.meta.env.DEV && searchProvider.mode === 'mock' ? searchProvider.developmentMessage : ''; $('cancelLocation').hidden = !editing; $('menuButton').hidden = !editing; showView('location-view'); }
 function readSimplePrayerForm() { const location = { placeId: $('profilePlaceId').value || null, formattedAddress: $('profileFormattedAddress').value, displayName: validateDisplayName($('profileDisplayName').value), city: $('profileCity').value, state: $('profileState').value, country: $('profileCountry').value, latitude: $('profileLatitude').value, longitude: $('profileLongitude').value, timeZone: $('profileTimezone').value, sehriOffsetMinutes: state.profile?.sehriOffsetMinutes ?? 30, adjustments: state.profile?.adjustments || resetPrayerAdjustments(), locationSource: state.locationDraft.selected?.locationSource || 'manual-coordinates', locationVersion: state.profile?.locationVersion || 'inspection' }; return { ...location, ...automaticPrayerSettings(location) }; }
 function readSimpleLocationForm() { if (!canActivateLocationDraft({ selectedPlace: state.locationDraft.selected, coordinatesChanged: state.locationDraft.coordinatesChanged })) throw new Error('Select, detect, or confirm a location first.'); return readSimplePrayerForm(); }
@@ -461,7 +471,26 @@ function bindEvents() {
   $('choosePredefined').addEventListener('click', async () => { $('routine-choice-status').textContent = 'Preparing your routine…'; state.settings = await routineService.setOnboardingChoice('predefined'); await refreshDefinitions(); showView('home-view'); await fetchRoutine(); });
   $('chooseCustom').addEventListener('click', async () => { $('routine-choice-status').textContent = 'Preparing Activity Management…'; state.settings = await routineService.setOnboardingChoice('custom'); await refreshDefinitions(); showView('manage-view'); await renderManagement('Add your first activity below.'); });
   $('homeLocation').addEventListener('click', () => showView('settings-view')); $('changeLocation').addEventListener('click', () => openSimpleLocationSetup(true)); $('cancelLocation').addEventListener('click', async () => { if (state.enablingPrayer) { state.enablingPrayer = false; await routineService.setPrayerRoutineEnabled(false); } showView('settings-view'); });
-  $('nameForm').addEventListener('submit', async (event) => { event.preventDefault(); try { state.profile = await routineService.saveDisplayName($('settingsDisplayName').value); renderProfileIdentity(); $('profile-status').textContent = 'Name updated.'; } catch (error) { $('profile-status').textContent = error.message; } });
+  $('nameForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    try {
+      const name = $('settingsDisplayName').value.trim();
+
+      if (authService) {
+        state.account = await authService.updateDisplayName(name);
+      }
+
+      state.profile = await routineService.saveDisplayName(name);
+      renderProfileIdentity();
+      renderSimpleSettings();
+
+      $('profile-status').textContent =
+        'Name updated on this device and Firebase.';
+    } catch (error) {
+      $('profile-status').textContent = error.message;
+    }
+  });
   $('detectLocation').addEventListener('click', async () => { $('location-status').textContent = 'Detecting location…'; try { const coordinates = await geolocationProvider.detect(); const named = await searchProvider.reverseGeocode(coordinates); fillSimpleLocationForm({ ...DEFAULT_LOCATION_SUGGESTION, ...named, ...coordinates, displayName: $('profileDisplayName').value, timeZone: resolveTimezone(coordinates.latitude, coordinates.longitude), placeId: named.placeId || null, locationSource: 'device-foreground' }); $('location-status').textContent = 'Location detected. Review and confirm.'; } catch (error) { $('location-status').textContent = `${error.message} Use city search or select a point on the map.`; } });
   $('searchCityChoice').addEventListener('click', () => $('locationSearch').focus());
   $('selectMapChoice').addEventListener('click', async () => { $('mapPanel').hidden = false; $('mapProviderLabel').textContent = import.meta.env.DEV ? mapProvider.label : ''; mountedMap?.destroy(); try { mountedMap = await mapProvider.mount({ container: $('locationMap'), initial: state.locationDraft.selected || state.profile || DEFAULT_LOCATION_SUGGESTION, onChange: (location) => { state.mapDraft = location; $('location-status').textContent = 'Marker selected. Confirm it to review the location.'; }, onError: (error) => { $('location-status').textContent = `Unable to resolve the map location: ${error.message}`; } }); } catch (error) { $('location-status').textContent = `Unable to open map selection: ${error.message}`; } });
@@ -550,7 +579,21 @@ async function bootstrap() {
     const token = await user.getIdTokenResult();
     $('adminMenuButton').hidden = token.claims.admin !== true;
     const initialization = await routineService.initialize(); if (import.meta.env.DEV) console.info('[development] IndexedDB diagnostics', initialization.diagnostics);
-    state.settings = await routineService.getSettings(); await refreshDefinitions(); state.profile = await routineService.getLocationProfile(); await routineService.ensurePrayerCalculatorCurrent();
+    state.settings = await routineService.getSettings();
+    await refreshDefinitions();
+    state.profile = await routineService.getLocationProfile();
+
+    if (
+      state.profile &&
+      state.account?.displayName &&
+      state.profile.displayName !== state.account.displayName
+    ) {
+      state.profile = await routineService.saveDisplayName(
+        state.account.displayName,
+      );
+    }
+
+    await routineService.ensurePrayerCalculatorCurrent();
     renderProfileIdentity(); if (state.profile && state.settings.onboardingChoice) { await fetchRoutine(); if (state.settings.prayerRoutineEnabled !== false) void routineService.warmPrayerCache(); void routineService.getStoredDays().then((days)=>alarmCoordinator.reschedule(days,state.profile,state.settings)); } else if (state.profile) { setDailyLoading(false); showView('routine-choice-view'); } else { setDailyLoading(false); openSimpleLocationSetup(false); }
   } catch (error) { console.error('Application database initialization failed.', error); setDailyLoading(false); showView('home-view'); showDailyError(error, $('datePicker').value || 'the selected date'); }
 }

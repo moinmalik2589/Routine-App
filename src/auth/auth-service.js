@@ -115,8 +115,8 @@ export class AuthService {
     const record = {
       uid: user.uid,
       displayName:
-        existing.displayName ||
         user.displayName ||
+        existing.displayName ||
         user.email?.split('@')[0] ||
         'Routine User',
       email: user.email || existing.email || '',
@@ -137,6 +137,38 @@ export class AuthService {
       ...existing,
       ...record,
     };
+  }
+
+  async updateDisplayName(displayName) {
+    const name = displayName?.trim();
+    const user = this.auth.currentUser;
+
+    if (!user) {
+      throw new Error('You must be signed in to change your name.');
+    }
+
+    if (!name) {
+      throw new Error('Please enter your name.');
+    }
+
+    await updateProfile(user, {
+      displayName: name,
+    });
+
+    await setDoc(
+      doc(this.firestore, 'users', user.uid),
+      {
+        uid: user.uid,
+        displayName: name,
+        email: user.email || '',
+        emailVerified: user.emailVerified,
+        updatedAt: serverTimestamp(),
+        lastLoginAt: serverTimestamp(),
+      },
+      { merge: true },
+    );
+
+    return this.ensureUserProfile(user);
   }
 
   resetPassword(email) {

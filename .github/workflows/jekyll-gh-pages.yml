@@ -1,0 +1,13 @@
+name: Legacy Jekyll Workflow - Disabled
+
+# This file intentionally has no push trigger.
+# The Routine app is a Vite application and must be deployed by deploy-pages.yml.
+on:
+  workflow_dispatch:
+
+jobs:
+  disabled:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Legacy workflow disabled
+        run: echo "Jekyll deployment is disabled. Use Deploy Routine App."
