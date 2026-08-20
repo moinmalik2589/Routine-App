@@ -2,22 +2,22 @@ import { initializeApp } from 'firebase/app';
 import { getAnalytics, isSupported, logEvent } from 'firebase/analytics';
 
 const firebaseConfig = {
-  apiKey: 'PASTE_API_KEY_HERE',
-  authDomain: 'PASTE_AUTH_DOMAIN_HERE',
-  projectId: 'PASTE_PROJECT_ID_HERE',
-  storageBucket: 'PASTE_STORAGE_BUCKET_HERE',
-  messagingSenderId: 'PASTE_MESSAGING_SENDER_ID_HERE',
-  appId: 'PASTE_APP_ID_HERE',
-  measurementId: 'PASTE_MEASUREMENT_ID_HERE',
+  apiKey: "AIzaSyAPBLsOF5mVtVaDY_b44RRcKI0es793Coc",
+  authDomain: "moin-malik-routine-app.firebaseapp.com",
+  projectId: "moin-malik-routine-app",
+  storageBucket: "moin-malik-routine-app.firebasestorage.app",
+  messagingSenderId: "129745587104",
+  appId: "1:129745587104:web:e8a4ade1a3138b1c1772c5",
+  measurementId: "G-CBRTQGQGBQ"
 };
 
 let analytics = null;
 let ready = false;
 
 function configured() {
-  return !firebaseConfig.apiKey.startsWith('PASTE_')
-    && !firebaseConfig.appId.startsWith('PASTE_')
-    && !firebaseConfig.measurementId.startsWith('PASTE_');
+  return !firebaseConfig.apiKey.startsWith('AIzaSyAPBLsOF5mVtVaDY_b44RRcKI0es793Coc')
+    && !firebaseConfig.appId.startsWith('1:129745587104:web:e8a4ade1a3138b1c1772c5')
+    && !firebaseConfig.measurementId.startsWith('G-CBRTQGQGBQ');
 }
 
 export async function initFirebaseAnalytics() {
