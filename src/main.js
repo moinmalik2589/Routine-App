@@ -14,13 +14,14 @@ import { saveLocationAndRefresh } from './location/location-save-flow.js';
 import { WEEKDAY_KEYS, createSchedule, createTimeSlot } from './scheduling/schedule.js';
 import { DailyLoadController } from './ui/daily-load-controller.js';
 import { activityManagementControls } from './ui/activity-management-controls.js';
+import { analyticsForDays, barChart, heatmap, lineChart } from './ui/analytics.js';
 import { homePrayerDisplayValues } from './ui/prayer-display.js';
 import { profileHeading, profileLocationLabel } from './ui/profile-presentation.js';
 import { firebaseConfigured, firebaseServices } from './auth/firebase-client.js'; import { AuthService } from './auth/auth-service.js';
 import { AdminService } from './admin/admin-service.js';
 import { NativeAlarmService } from './alarms/native-alarm-service.js'; import { AlarmCoordinator } from './alarms/alarm-coordinator.js';
 
-const state = { day: null, activities: [], fastingRanges: [], monthDays: [], activityDays: [], profile: null, settings: null, account: null, editingSlots: [], progressToToday: true, activeView: 'home-view', locationDraft: { selected: null, coordinatesChanged: false }, locationResults: [], mapDraft: null, enablingPrayer: false };
+const state = { day: null, activities: [], fastingRanges: [], monthDays: [], activityDays: [], analyticsDays: [], profile: null, settings: null, account: null, editingSlots: [], progressToToday: true, activeView: 'home-view', locationDraft: { selected: null, coordinatesChanged: false }, locationResults: [], mapDraft: null, enablingPrayer: false, streaks: new Map(), streakRunToken: 0 };
 const $ = (id) => document.getElementById(id);
 const searchProvider = createLocationProvider(); const geolocationProvider = new BrowserGeolocationProvider(); const mapProvider = createMapProvider({ reverseGeocoder: searchProvider });
 const firebaseRuntime = firebaseConfigured ? firebaseServices() : null; const authService = firebaseRuntime ? new AuthService(firebaseRuntime) : null; const adminService = firebaseRuntime ? new AdminService(firebaseRuntime) : null;
@@ -37,12 +38,164 @@ function timeMinutes(time) {
   return hour * 60 + Number(match[2]);
 }
 function setRing(ringId, textId, percent) {
-  const color = percent >= 100 ? '#3b82f6' : percent >= 80 ? '#22c55e' : percent >= 50 ? '#eab308' : '#ef4444';
-  $(ringId).style.background = `conic-gradient(${color} ${percent}%, #e2e8f0 0%)`; $(textId).textContent = `${percent}%`; $(textId).style.color = color;
+  const ring = $(ringId), text = $(textId);
+  if (!ring || !text) return;
+  ring.style.background = `conic-gradient(var(--accent) ${percent}%, var(--ring-track) 0%)`;
+  text.textContent = `${percent}%`;
+  text.style.color = 'var(--accent-deep)';
+  ring.style.setProperty('--progress-angle', `${percent * 3.6}deg`);
 }
 function alarmEnabled(day, id) { const base = id.split(':')[0]; return day.alarmsEnabled && !day.disabledAlarmIds.includes(id) && !day.disabledAlarmIds.includes(base); }
 function isRamadan(date) { return isInRanges(date, state.fastingRanges); }
 function isFastingDay(day) { return day.weekday === 'Friday' || isRamadan(day.date); }
+
+const ACCENTS = ['emerald', 'violet', 'ocean', 'sunset', 'rose'];
+let deferredInstallPrompt = null;
+const THEME_MODES = ['light', 'dark', 'aurora', 'multicolor'];
+const STREAK_START_KEY = 'moinRoutineStreakStartDate';
+
+function streakStartDate() {
+  let startDate = localStorage.getItem(STREAK_START_KEY);
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate || '')) {
+    startDate = todayIso();
+    localStorage.setItem(STREAK_START_KEY, startDate);
+  }
+
+  return startDate;
+}
+
+function preferredTheme() {
+  const saved = localStorage.getItem('moinRoutineTheme');
+  return THEME_MODES.includes(saved) ? saved : 'light';
+}
+function preferredAccent() { return localStorage.getItem('moinRoutineAccent') || 'emerald'; }
+function applyAppearance(theme = preferredTheme(), accent = preferredAccent()) {
+  if (!THEME_MODES.includes(theme)) theme = 'light';
+  if (!ACCENTS.includes(accent)) accent = 'emerald';
+  document.documentElement.dataset.theme = theme;
+  document.documentElement.dataset.accent = accent;
+  const isDarkLike = theme !== 'light';
+  if ($('themeToggle')) {
+    $('themeToggle').classList.toggle('is-dark', isDarkLike);
+    $('themeToggle').setAttribute('aria-label', isDarkLike ? 'Switch to light mode' : 'Switch to dark mode');
+  }
+  if ($('themeToggleIcon')) $('themeToggleIcon').textContent = '';
+  if ($('profileThemeToggle')) $('profileThemeToggle').textContent = isDarkLike ? '☀️ Switch to Light' : '🌙 Switch to Dark';
+  document.querySelectorAll('[data-accent]').forEach((button) => button.classList.toggle('selected', button.dataset.accent === accent));
+  document.querySelectorAll('[data-theme-mode]').forEach((button) => button.classList.toggle('selected', button.dataset.themeMode === theme));
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = theme === 'dark' ? '#000000' : theme === 'aurora' ? '#07150f' : theme === 'multicolor' ? '#0d2818' : '#f5fff8';
+}
+function toggleTheme() {
+  const current = preferredTheme();
+  const next = current === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('moinRoutineTheme', next);
+  applyAppearance(next, preferredAccent());
+  document.body.classList.remove('theme-flash');
+  void document.body.offsetWidth;
+  document.body.classList.add('theme-flash');
+}
+function setAccent(accent) { if (!ACCENTS.includes(accent)) return; localStorage.setItem('moinRoutineAccent', accent); applyAppearance(preferredTheme(), accent); }
+function cycleAccent() {
+  const current = preferredTheme();
+  const next = THEME_MODES[(THEME_MODES.indexOf(current) + 1) % THEME_MODES.length];
+  localStorage.setItem('moinRoutineTheme', next);
+  applyAppearance(next, preferredAccent());
+  showAppToast(`${next === 'dark' ? 'Black' : next[0].toUpperCase() + next.slice(1)} theme`, next === 'light' ? '☀️' : next === 'dark' ? '🌑' : next === 'aurora' ? '🌌' : '🌈');
+}
+
+function streakMarkup(value) {
+  if (value > 0) return `<span class="streak-badge streak-positive" title="${value} completed scheduled day${value === 1 ? '' : 's'} in a row">🔥 ${value}</span>`;
+  if (value <= -2) return `<span class="streak-badge streak-negative" title="${Math.abs(value)} consecutive missed scheduled days">${Math.abs(value)} <span class="inverted-fire" aria-hidden="true">🔥</span></span>`;
+  return '<span class="streak-badge streak-zero" title="No active streak">🔥 0</span>';
+}
+
+function feedbackPulse(completed = false) {
+  const soundEnabled = localStorage.getItem('moinRoutineSound') !== 'off';
+  const vibrationEnabled = localStorage.getItem('moinRoutineVibration') !== 'off';
+  try {
+    if (!soundEnabled) throw new Error('sound-disabled');
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (AudioContextClass) {
+      const ctx = new AudioContextClass();
+      const oscillator = ctx.createOscillator();
+      const gain = ctx.createGain();
+      oscillator.type = 'sine'; oscillator.frequency.setValueAtTime(completed ? 720 : 470, ctx.currentTime);
+      if (completed) oscillator.frequency.exponentialRampToValueAtTime(980, ctx.currentTime + .09);
+      gain.gain.setValueAtTime(.055, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(.001, ctx.currentTime + .11);
+      oscillator.connect(gain); gain.connect(ctx.destination); oscillator.start(); oscillator.stop(ctx.currentTime + .115);
+      oscillator.addEventListener('ended', () => ctx.close().catch(() => {}), { once: true });
+    }
+  } catch (error) { if (error?.message !== 'sound-disabled') console.debug('Sound feedback unavailable', error); }
+  if (vibrationEnabled && navigator.vibrate) navigator.vibrate(completed ? [28, 22, 45] : 24);
+}
+
+function showAppToast(message, icon = '✨') {
+  const toast = $('appToast'); if (!toast) return; toast.innerHTML = `<span>${icon}</span><strong>${escapeHtml(message)}</strong>`; toast.hidden = false; toast.classList.remove('toast-pop'); void toast.offsetWidth; toast.classList.add('toast-pop'); clearTimeout(showAppToast.timer); showAppToast.timer = setTimeout(() => { toast.hidden = true; }, 2300);
+}
+
+function historicalStreakFromDays(targetDate, occurrence, storedDays) {
+  const startDate = streakStartDate();
+
+  if (targetDate < startDate) return 0;
+
+  let runType = null;
+  let run = 0;
+
+  const past = storedDays
+    .filter((day) => day?.date >= startDate && day.date < targetDate)
+    .sort((a, b) => b.date.localeCompare(a.date));
+  for (const day of past) {
+    const match = day?.occurrences?.find((item) => item.id === occurrence.id);
+    if (!match) continue; // SKIP / N/A / blank: does not break the run.
+    const checked = Boolean(day.completions?.[match.id]);
+    const type = checked ? 'TRUE' : 'FALSE';
+    if (runType === null) { runType = type; run = 1; continue; }
+    if (runType === type) { run += 1; continue; }
+    break;
+  }
+  if (runType === 'TRUE') return run;
+  if (runType === 'FALSE') return -run;
+  return 0;
+}
+
+function evaluateTargetStreak(history, checked, targetDate = state.day?.date) {
+  if (targetDate && targetDate < streakStartDate()) return 0;
+  if (checked) return history > 0 ? history + 1 : 1;
+  if (history > 0) return history;
+  if (history === -1) return 0;
+  if (history <= -2) return history;
+  return 0;
+}
+
+async function refreshVisibleStreaks() {
+  const day = state.day; if (!day?.date) return;
+  const token = ++state.streakRunToken;
+  const rows = [...day.occurrences];
+  const storedDays = await routineService.getStoredDays();
+  if (token !== state.streakRunToken || state.day?.date !== day.date) return;
+  rows.forEach((occurrence) => {
+    const history = historicalStreakFromDays(day.date, occurrence, storedDays);
+    const value = evaluateTargetStreak(history, Boolean(state.day.completions[occurrence.id]));
+    state.streaks.set(`${day.date}:${occurrence.id}`, { history, value });
+    const target = document.querySelector(`[data-streak-for="${CSS.escape(occurrence.id)}"]`);
+    if (target) target.innerHTML = streakMarkup(value);
+  });
+  if (token === state.streakRunToken) renderLoveFeatures();
+}
+
+function renderLoveFeatures() {
+  if (!state.day) return;
+  const values = state.day.occurrences.map((item) => state.streaks.get(`${state.day.date}:${item.id}`)?.value).filter((value) => Number.isFinite(value));
+  const best = values.filter((value) => value > 0).reduce((max, value) => Math.max(max, value), 0);
+  const completed = state.day.occurrences.filter((item) => state.day.completions[item.id]).length;
+  const possible = state.day.occurrences.length;
+  const rate = possible ? Math.round(completed / possible * 100) : 0;
+  if ($('bestActiveStreak')) $('bestActiveStreak').textContent = String(best);
+  if ($('momentumLabel')) $('momentumLabel').textContent = rate >= 100 ? 'Unstoppable' : rate >= 75 ? 'On fire' : rate >= 40 ? 'Building' : completed ? 'Started' : 'Ready';
+  if ($('todayWinLabel')) $('todayWinLabel').textContent = String(completed);
+}
 
 function renderDay() {
   const day = state.day; if (!day?.date || !Array.isArray(day.occurrences)) throw new Error('Cannot render an invalid daily routine record.'); $('dayOfWeek').textContent = day.weekday; renderProfileIdentity();
@@ -53,14 +206,14 @@ function renderDay() {
   $('routine-list').innerHTML = rows.length ? rows.map((occurrence) => {
     const timing = occurrence.notificationEnabled ? `<button class="${alarmEnabled(day, occurrence.notificationId) ? 'timing-alarm-on' : 'timing-alarm-off'}" data-alarm="${occurrence.notificationId}">${escapeHtml(occurrence.time)}</button>` : `<span class="timing-no-alarm">${escapeHtml(occurrence.time)}</span>`;
     const name = occurrence.label ? `${occurrence.activityName} · ${occurrence.label}` : occurrence.activityName;
-    return `<div class="routine-item"><div>${timing}</div><div class="activity-name">${escapeHtml(name)}</div><div class="status"><input type="checkbox" data-completion="${occurrence.id}" aria-label="Complete ${escapeHtml(name)}" ${day.completions[occurrence.id] ? 'checked' : ''}></div></div>`;
+    return `<div class="routine-item"><div>${timing}</div><div class="activity-name"><span>${escapeHtml(name)}</span></div><div class="status"><small class="habit-streak" data-streak-for="${escapeHtml(occurrence.id)}">${streakMarkup(state.streaks.get(`${day.date}:${occurrence.id}`)?.value ?? 0)}</small><label class="check-shell"><input type="checkbox" data-completion="${occurrence.id}" aria-label="Complete ${escapeHtml(name)}" ${day.completions[occurrence.id] ? 'checked' : ''}><span></span></label></div></div>`;
   }).join('') : '<div class="routine-error"><strong>Your routine is empty.</strong><p>Open Activity Management to add your first activity.</p><button class="home-btn" type="button" data-view="manage-view">Add First Activity</button></div>';
   const enabledFast = (id) => alarmEnabled(day, id) ? 'timing-alarm-on' : 'timing-alarm-off';
   const fastActive = isFastingDay(day);
   const { fajr, sunrise, maghrib } = homePrayerDisplayValues(day);
   $('fajr-display').innerHTML = `Fajr Time: <span class="timing-no-alarm">${fajr}</span> - <span class="timing-no-alarm">${sunrise}</span>`;
   $('fast-display').innerHTML = fastActive ? `Fast Time: <button class="${enabledFast('FAST_START')}" data-alarm="FAST_START">${fajr}</button> - <button class="${enabledFast('FAST_END')}" data-alarm="FAST_END">${maghrib}</button>` : `Fast Time: <span class="timing-no-alarm">${fajr}</span> - <span class="timing-no-alarm">${maghrib}</span>`;
-  $('bottom-timings').hidden = false; calculateDailyProgress();
+  $('bottom-timings').hidden = false; calculateDailyProgress(); renderHomeSnapshot(); renderLoveFeatures(); refreshVisibleStreaks();
 }
 function calculateDailyProgress() { const boxes = [...document.querySelectorAll('[data-completion]')]; setRing('dailyProgressRing', 'dailyProgressText', boxes.length ? Math.round(boxes.filter((box) => box.checked).length / boxes.length * 100) : 0); }
 function validIsoDate(value) { return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(new Date(`${value}T12:00:00+05:30`).getTime()); }
@@ -79,6 +232,60 @@ function renderMonthly() {
   setRing('monthlyProgressRing', 'monthlyProgressText', progress.percent); $('monthly-status').textContent = `Completed ${progress.completed} out of ${progress.possible} activities ${state.progressToToday ? '(Up to Today)' : '(Total for Month)'}.`;
 }
 async function fetchMonthly() { $('monthly-status').textContent = 'Loading monthly data...'; state.monthDays = await routineService.ensureMonth($('monthPicker').value); renderMonthly(); }
+
+
+function maybeShowAllDoneCelebration() {
+  const day = state.day;
+  if (!day || day.date !== todayIso() || !day.occurrences?.length) return;
+  const complete = day.occurrences.every(item => Boolean(day.completions?.[item.id]));
+  if (!complete) return;
+  const modal = $('allDoneModal');
+  if (!modal || modal.dataset.shownFor === day.date) return;
+  modal.dataset.shownFor = day.date;
+  const values = currentStreakValues().map(item => item.value).filter(value => value > 0);
+  if ($('allDoneWins')) $('allDoneWins').textContent = String(day.occurrences.length);
+  if ($('allDoneStreak')) $('allDoneStreak').textContent = String(values.length ? Math.max(...values) : 0);
+  modal.hidden = false;
+  requestAnimationFrame(() => modal.classList.add('show'));
+  feedbackPulse(true);
+}
+function closeAllDoneCelebration() {
+  const modal = $('allDoneModal');
+  if (!modal) return;
+  modal.classList.remove('show');
+  setTimeout(() => { modal.hidden = true; }, 260);
+}
+function renderHomeSnapshot() {
+  const day = state.day; if (!day) return;
+  const stats = analyticsForDays([day]);
+  const remaining = Math.max(0, stats.possible - stats.completed);
+  $('todayDone').textContent = `${stats.completed}/${stats.possible}`;
+  $('todayRate').textContent = `${stats.rate}%`;
+  $('todayLeft').textContent = String(remaining);
+  if ($('habitCompletionBadge')) $('habitCompletionBadge').textContent = `${stats.completed}/${stats.possible} Completed`;
+  if ($('dateNavLabel')) { const selected = day.date; $('dateNavLabel').textContent = selected === todayIso() ? 'Today' : new Date(`${selected}T12:00:00`).toLocaleDateString(undefined, { weekday:'short', day:'numeric', month:'short' }); }
+  const pending = [...day.occurrences].sort((a,b) => timeMinutes(a.time) - timeMinutes(b.time)).find((item) => !day.completions[item.id]);
+  if ($('focusHabit')) $('focusHabit').textContent = pending ? (pending.label ? `${pending.activityName} · ${pending.label}` : pending.activityName) : (stats.possible ? 'Everything is done 🎉' : 'No habits scheduled');
+  if ($('focusMeta')) $('focusMeta').textContent = pending ? `${pending.time || 'Any time'} · ${remaining} remaining today` : (stats.possible ? 'You completed your full routine for this day.' : 'Add a habit to start building your routine.');
+  if ($('completionCelebration')) $('completionCelebration').hidden = !(stats.possible > 0 && stats.completed === stats.possible);
+  renderLoveFeatures();
+}
+
+async function fetchAnalytics() {
+  const month = $('analyticsMonthPicker').value || monthKey($('datePicker').value);
+  $('analyticsStatus').textContent = 'Building your insights…';
+  state.analyticsDays = await routineService.ensureMonth(month);
+  const through = month === monthKey(todayIso()) ? todayIso() : null;
+  const stats = analyticsForDays(state.analyticsDays, through);
+  $('analyticsRate').textContent = `${stats.rate}%`;
+  $('analyticsDone').textContent = String(stats.completed);
+  $('analyticsStreak').textContent = `${stats.currentStreak}d`;
+  $('analyticsPerfect').textContent = String(stats.perfectDays);
+  $('consistencyChart').innerHTML = lineChart(stats.daily);
+  $('habitRankChart').innerHTML = barChart(stats.activities);
+  $('monthHeatmap').innerHTML = heatmap(stats.daily);
+  $('analyticsStatus').textContent = stats.possible ? `${stats.completed} of ${stats.possible} scheduled habit checks completed.` : 'No scheduled habits in this period yet.';
+}
 
 function visibleActivityDays() {
   const type = $('activityViewType').value; if (type !== 'weekly') return state.activityDays;
@@ -101,7 +308,62 @@ function renderActivity() {
 }
 async function fetchActivity() { $('activity-status').textContent = 'Loading activity data...'; state.activityDays = $('activityViewType').value === 'yearly' ? await routineService.getYear($('actYearPicker').value) : await routineService.ensureMonth($('actMonthPicker').value); renderActivity(); }
 function updateActivityControls() { const type = $('activityViewType').value; $('actMonthPicker').hidden = type === 'yearly'; $('actWeekPicker').hidden = type !== 'weekly'; $('actYearPicker').hidden = type !== 'yearly'; fetchActivity(); }
-function showView(viewId) { if (state.activeView === 'location-view' && viewId !== 'location-view') { autocompleteController?.escape(); mountedMap?.destroy(); mountedMap = null; } state.activeView = viewId; document.querySelectorAll('.view-section').forEach((section) => section.classList.toggle('active', section.id === viewId)); $('home-controls').hidden = viewId !== 'home-view'; $('dropdownMenu').classList.remove('show'); if (viewId === 'monthly-view') { $('monthPicker').value = monthKey($('datePicker').value); fetchMonthly(); } if (viewId === 'activity-view') { $('actMonthPicker').value = monthKey($('datePicker').value); $('actYearPicker').value = $('datePicker').value.slice(0, 4); updateActivityControls(); } if (viewId === 'manage-view') renderManagement(); if (viewId === 'settings-view') renderSimpleSettings(); if (viewId === 'admin-view') renderAdminUsers(); }
+
+function currentStreakValues() {
+  if (!state.day?.occurrences) return [];
+  return state.day.occurrences.map((item) => ({
+    id: item.id,
+    name: item.label ? `${item.activityName} · ${item.label}` : item.activityName,
+    value: state.streaks.get(`${state.day.date}:${item.id}`)?.value ?? 0,
+    checked: Boolean(state.day.completions?.[item.id])
+  }));
+}
+
+function renderStreaksFeature() {
+  const values = currentStreakValues();
+  const positives = values.map(x => x.value).filter(v => v > 0);
+  const best = positives.length ? Math.max(...positives) : 0;
+  const wins = values.filter(x => x.checked).length;
+  const milestones = [3,7,14,30,50,100];
+  const next = milestones.find(m => m > best) || 100;
+  const previous = [...milestones].reverse().find(m => m <= best) || 0;
+  const denom = Math.max(1, next - previous);
+  const pct = best >= 100 ? 100 : Math.max(0, Math.min(100, Math.round((best - previous) / denom * 100)));
+  if ($('streakCurrentHero')) $('streakCurrentHero').textContent = best;
+  if ($('streakBestActive')) $('streakBestActive').textContent = best;
+  if ($('streakLongest')) $('streakLongest').textContent = best;
+  if ($('streakTodayWins')) $('streakTodayWins').textContent = wins;
+  if ($('nextMilestoneCopy')) $('nextMilestoneCopy').textContent = best >= 100 ? '100-day mastery achieved.' : `${Math.max(0,next-best)} more day${next-best===1?'':'s'} to the ${next}-day milestone.`;
+  if ($('nextMilestoneBar')) $('nextMilestoneBar').style.width = `${pct}%`;
+  if ($('habitStreakList')) $('habitStreakList').innerHTML = values.length ? values.sort((a,b)=>b.value-a.value).map(item => `<div class="habit-streak-row"><div><strong>${escapeHtml(item.name)}</strong><small>${item.checked ? 'Completed today' : 'Pending today'}</small></div><span>${streakMarkup(item.value)}</span></div>`).join('') : '<p class="summary">No habits scheduled for this day.</p>';
+}
+
+function renderAchievementsFeature() {
+  const values = currentStreakValues();
+  const best = values.map(x=>x.value).filter(v=>v>0).reduce((m,v)=>Math.max(m,v),0);
+  const achievements = [
+    [3,'🌱','3 Day Streak','Great start!'], [7,'🌟','7 Day Streak','One full week!'], [14,'💪','14 Day Streak','Momentum builder'],
+    [30,'👑','30 Day Streak','A serious habit'], [50,'🏅','50 Day Streak','Legendary consistency'], [100,'💎','100 Day Streak','Master consistency']
+  ];
+  const unlocked = achievements.filter(([days])=>best>=days).length;
+  if ($('achievementUnlockedCount')) $('achievementUnlockedCount').textContent = `${unlocked} of ${achievements.length} unlocked`;
+  if ($('achievementList')) $('achievementList').innerHTML = achievements.map(([days,icon,title,copy]) => {
+    const done = best >= days; const progress = Math.min(100, Math.round(best/days*100));
+    return `<article class="achievement-item ${done?'unlocked':''}"><div class="achievement-icon">${icon}</div><div class="achievement-copy"><strong>${title}</strong><small>${copy}</small><div class="achievement-bar"><i style="width:${progress}%"></i></div></div><div class="achievement-state">${done?'✓':`${best}/${days}`}</div></article>`;
+  }).join('');
+}
+
+function openSettingsFeature(action) {
+  showView('settings-view');
+  requestAnimationFrame(() => {
+    const target = action === 'backup' ? $('backupRestoreDetails') : action === 'reminders' ? $('reminderStatusDetails') : action === 'privacy' ? $('privacyAccountDetails') : action === 'prayer' ? $('prayerProfileSettings') : null;
+    if (target?.tagName === 'DETAILS') target.open = true;
+    target?.scrollIntoView({behavior:'smooth', block:'center'});
+    target?.classList.add('feature-focus'); setTimeout(()=>target?.classList.remove('feature-focus'),900);
+  });
+}
+
+function showView(viewId) { if (state.activeView === 'location-view' && viewId !== 'location-view') { autocompleteController?.escape(); mountedMap?.destroy(); mountedMap = null; } state.activeView = viewId; document.querySelectorAll('.view-section').forEach((section) => section.classList.toggle('active', section.id === viewId)); $('home-controls').hidden = viewId !== 'home-view'; $('dropdownMenu').classList.remove('show'); document.querySelectorAll('[data-nav-view]').forEach((button) => button.classList.toggle('active', button.dataset.navView === viewId)); const chromeHidden = ['auth-view','location-view','routine-choice-view'].includes(viewId); if ($('bottomNav')) $('bottomNav').hidden = chromeHidden; if ($('quickAddHabit')) $('quickAddHabit').hidden = chromeHidden || viewId === 'manage-view'; if (viewId === 'analytics-view') { $('analyticsMonthPicker').value = monthKey($('datePicker').value); fetchAnalytics(); } if (viewId === 'streaks-view') renderStreaksFeature(); if (viewId === 'achievements-view') renderAchievementsFeature(); if (viewId === 'monthly-view') { $('monthPicker').value = monthKey($('datePicker').value); fetchMonthly(); } if (viewId === 'activity-view') { $('actMonthPicker').value = monthKey($('datePicker').value); $('actYearPicker').value = $('datePicker').value.slice(0, 4); updateActivityControls(); } if (viewId === 'manage-view') renderManagement(); if (viewId === 'settings-view') renderSimpleSettings(); if (viewId === 'admin-view') renderAdminUsers(); }
 async function renderAdminUsers() { if (!adminService) return; try { const users = await adminService.listUsers(), term = $('adminSearch').value.toLowerCase(); $('adminUsers').innerHTML = users.filter((user) => `${user.displayName} ${user.email}`.toLowerCase().includes(term)).map((user) => `<div class="management-item"><div><strong>${escapeHtml(user.displayName || '')}</strong><div>${escapeHtml(user.email || '')}</div><small>${escapeHtml(user.accountStatus)} · ${escapeHtml(user.subscriptionStatus)}</small></div><div class="management-actions">${['activate','suspend','deactivate','startTrial','extend','expire','cancel','restore'].map((action) => `<button data-admin-action="${action}" data-uid="${user.uid}">${action}</button>`).join('')}</div></div>`).join(''); $('adminStatus').textContent = `${users.length} users loaded.`; } catch (error) { $('adminStatus').textContent = error.message; } }
 
 function activityOptions(selected = $('activitySelector').value) {
@@ -145,6 +407,10 @@ async function selectLocationResult(item) { $('location-status').textContent = '
 function updatePrayerDiagnostics() { if (!import.meta.env.DEV || !state.profile) return; const cache = routineService.prayerCache.lastResult; $('prayerDiagnostics').hidden = false; $('prayerDiagnostics').textContent = `Development diagnostics — coordinates: ${state.profile.latitude}, ${state.profile.longitude}; timezone: ${state.profile.timeZone}; method: ${state.profile.calculationMethod}; madhab: ${state.profile.madhab}; high latitude: ${state.profile.highLatitudeRule || 'recommended'}; fingerprint: ${prayerSettingsFingerprint(state.profile)}; timing source: ${cache?.source || 'not loaded'}.`; }
 
 function bindEvents() {
+  $('themeToggle')?.addEventListener('click', toggleTheme); $('profileThemeToggle')?.addEventListener('click', toggleTheme); document.getElementById('accentCycle')?.addEventListener('click', cycleAccent); document.querySelectorAll('[data-accent]').forEach((button) => button.addEventListener('click', () => setAccent(button.dataset.accent))); document.querySelectorAll('[data-feature-view]').forEach((button)=>button.addEventListener('click',()=>showView(button.dataset.featureView))); document.querySelectorAll('[data-feature-action]').forEach((button)=>button.addEventListener('click',()=>openSettingsFeature(button.dataset.featureAction)));  document.querySelectorAll('[data-theme-mode]').forEach((button) => button.addEventListener('click', () => { const mode = button.dataset.themeMode; if (!THEME_MODES.includes(mode)) return; localStorage.setItem('moinRoutineTheme', mode); applyAppearance(mode, preferredAccent()); }));
+  if ($('soundFeedbackToggle')) { $('soundFeedbackToggle').checked = localStorage.getItem('moinRoutineSound') !== 'off'; $('soundFeedbackToggle').addEventListener('change', ({ target }) => { localStorage.setItem('moinRoutineSound', target.checked ? 'on' : 'off'); if (target.checked) feedbackPulse(false); }); }
+  if ($('vibrationFeedbackToggle')) { $('vibrationFeedbackToggle').checked = localStorage.getItem('moinRoutineVibration') !== 'off'; $('vibrationFeedbackToggle').addEventListener('change', ({ target }) => { localStorage.setItem('moinRoutineVibration', target.checked ? 'on' : 'off'); if (target.checked && navigator.vibrate) navigator.vibrate(30); }); }
+  $('installApp').addEventListener('click', async () => { if (!deferredInstallPrompt) return; deferredInstallPrompt.prompt(); await deferredInstallPrompt.userChoice; deferredInstallPrompt = null; $('installApp').hidden = true; });
   $('menuButton').addEventListener('click', (event) => { event.stopPropagation(); const open = $('dropdownMenu').classList.toggle('show'); $('menuButton').setAttribute('aria-expanded', String(open)); }); document.addEventListener('click', () => $('dropdownMenu').classList.remove('show'));
   document.querySelectorAll('[data-view]').forEach((button) => button.addEventListener('click', () => showView(button.dataset.view)));
   $('loginForm').addEventListener('submit', async (event) => { event.preventDefault(); try { await authService.login($('loginEmail').value, $('loginPassword').value); location.reload(); } catch (error) { $('authStatus').textContent = error.message; } });
@@ -157,9 +423,10 @@ function bindEvents() {
   $('adminRefresh').addEventListener('click', renderAdminUsers); $('adminSearch').addEventListener('input', renderAdminUsers); $('adminUsers').addEventListener('click', async ({ target }) => { if (!target.dataset.adminAction) return; try { await adminService.updateUser({ targetUid: target.dataset.uid, action: target.dataset.adminAction, subscriptionStart: $('adminStart').value || undefined, subscriptionEnd: $('adminEnd').value || undefined }); await renderAdminUsers(); } catch (error) { $('adminStatus').textContent = error.message; } });
   $('datePicker').addEventListener('change', fetchRoutine); $('previousDate').addEventListener('click', () => { if (!validIsoDate($('datePicker').value)) return; $('datePicker').value = addDays($('datePicker').value, -1); fetchRoutine(); }); $('nextDate').addEventListener('click', () => { if (!validIsoDate($('datePicker').value)) return; $('datePicker').value = addDays($('datePicker').value, 1); fetchRoutine(); });
   $('dailyAlarmToggle').addEventListener('click', async () => { const day = requireCurrentDay('daily alarm toggle'); if (!day) return; await routineService.setDayAlarms(day.date, !day.alarmsEnabled); await fetchRoutine(); });
-  $('routine-list').addEventListener('change', async ({ target }) => { if (!target.dataset.completion) return; const day = requireCurrentDay('completion update'); if (!day) return; await routineService.setCompletion(day.date, target.dataset.completion, target.checked); if (state.day?.date !== day.date) return; state.day.completions[target.dataset.completion] = target.checked; calculateDailyProgress(); });
+  $('closeAllDone')?.addEventListener('click', closeAllDoneCelebration); $('allDoneModal')?.addEventListener('click', (event) => { if (event.target === $('allDoneModal')) closeAllDoneCelebration(); }); document.querySelectorAll('[data-setting-action]').forEach((button) => button.addEventListener('click', () => openSettingsFeature(button.dataset.settingAction)));
+  $('routine-list').addEventListener('change', async ({ target }) => { if (!target.dataset.completion) return; const day = requireCurrentDay('completion update'); if (!day) return; const id = target.dataset.completion, checked = target.checked, previous = Boolean(state.day.completions[id]); state.day.completions[id] = checked; const streakRecord = state.streaks.get(`${day.date}:${id}`); if (streakRecord) { streakRecord.value = evaluateTargetStreak(streakRecord.history, checked); const badge = document.querySelector(`[data-streak-for="${CSS.escape(id)}"]`); if (badge) badge.innerHTML = streakMarkup(streakRecord.value); } calculateDailyProgress(); renderHomeSnapshot(); if (checked) maybeShowAllDoneCelebration(); feedbackPulse(checked); if (checked) { const currentStreak = streakRecord?.value || 1; if ([3,7,14,30,50,100].includes(currentStreak)) showAppToast(`${currentStreak}-day streak!`, '🔥'); } target.closest('.routine-item')?.classList.add('completion-pop'); setTimeout(() => target.closest('.routine-item')?.classList.remove('completion-pop'), 260); try { await routineService.setCompletion(day.date, id, checked); state.monthDays = []; state.activityDays = []; state.analyticsDays = []; if (!streakRecord) refreshVisibleStreaks(); } catch (error) { if (state.day?.date === day.date) { state.day.completions[id] = previous; target.checked = previous; if (streakRecord) { streakRecord.value = evaluateTargetStreak(streakRecord.history, previous); const badge = document.querySelector(`[data-streak-for="${CSS.escape(id)}"]`); if (badge) badge.innerHTML = streakMarkup(streakRecord.value); } calculateDailyProgress(); renderHomeSnapshot(); } console.error('Unable to save completion', error); } });
   $('home-view').addEventListener('click', async ({ target }) => { if (target.dataset.view) { showView(target.dataset.view); return; } if (target.hasAttribute('data-retry-routine')) { await fetchRoutine(); return; } const alarmId = target.dataset.alarm; if (!alarmId) return; const day = requireCurrentDay('individual alarm toggle'); if (!day) return; await routineService.setAlarm(day.date, alarmId, !alarmEnabled(day, alarmId)); if (state.day?.date === day.date) await fetchRoutine(); });
-  $('monthPicker').addEventListener('change', fetchMonthly); $('monthlyProgressRing').addEventListener('click', () => { state.progressToToday = !state.progressToToday; renderMonthly(); });
+  $('analyticsMonthPicker').addEventListener('change', fetchAnalytics); $('monthPicker').addEventListener('change', fetchMonthly); $('monthlyProgressRing').addEventListener('click', () => { state.progressToToday = !state.progressToToday; renderMonthly(); });
   $('monthlyAlarmTitle').addEventListener('click', async () => { const enable = state.monthDays.every((day) => !day.alarmsEnabled); const ids = [...new Set(state.monthDays.flatMap(({ occurrences }) => occurrences.filter(({ notificationEnabled }) => notificationEnabled).map(({ notificationId }) => notificationId)).concat(['FAST_START', 'FAST_END']))]; await routineService.setManyAlarms(state.monthDays, ids, enable); await fetchMonthly(); });
   $('monthly-table').addEventListener('click', async ({ target }) => { if (!target.dataset.monthDate) return; const day = state.monthDays.find(({ date }) => date === target.dataset.monthDate); await routineService.setDayAlarms(day.date, !day.alarmsEnabled); await fetchMonthly(); });
   $('activitySelector').addEventListener('change', renderActivity); $('activityViewType').addEventListener('change', updateActivityControls); $('actMonthPicker').addEventListener('change', fetchActivity); $('actWeekPicker').addEventListener('change', renderActivity); $('actYearPicker').addEventListener('change', fetchActivity); $('activityProgressRing').addEventListener('click', () => { state.progressToToday = !state.progressToToday; renderActivity(); });
@@ -194,6 +461,8 @@ function bindEvents() {
 }
 
 function initialiseControls() {
+  streakStartDate();
+  applyAppearance();
   autocompleteController = new LocationAutocompleteController({ provider: searchProvider, onState: renderLocationResults });
   $('weekdayChoices').innerHTML = WEEKDAY_KEYS.map((day) => `<label><input type="checkbox" name="scheduleWeekday" value="${day}">${day.slice(0, 3)}</label>`).join('');
   $('settingsPrayerAdjustments').innerHTML = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'].map((prayer) => `<label>${prayer[0].toUpperCase() + prayer.slice(1)}<input type="number" data-settings-adjustment="${prayer}" value="0" step="1"></label>`).join(''); resetActivityForm();
@@ -201,6 +470,7 @@ function initialiseControls() {
   $('datePicker').value = todayIso(); $('monthPicker').value = monthKey(todayIso()); $('actMonthPicker').value = monthKey(todayIso()); $('actYearPicker').value = String(currentYear);
   $('inspectorDate').value = todayIso(); if (import.meta.env.DEV) $('prayerInspector').hidden = false;
   $('appVersion').textContent = import.meta.env.VITE_APP_VERSION || '0.1.0';
+  if ('serviceWorker' in navigator && import.meta.env.PROD) navigator.serviceWorker.register('/sw.js').catch((error) => console.warn('Service worker registration failed', error));
   setInterval(() => { $('clock').textContent = new Date().toLocaleTimeString('en-US', { timeZone: APP_TIME_ZONE, hour12: true }); }, 1000);
 }
 
@@ -216,4 +486,6 @@ async function bootstrap() {
     renderProfileIdentity(); if (state.profile && state.settings.onboardingChoice) { await fetchRoutine(); if (state.settings.prayerRoutineEnabled !== false) void routineService.warmPrayerCache(); void routineService.getStoredDays().then((days)=>alarmCoordinator.reschedule(days,state.profile,state.settings)); } else if (state.profile) { setDailyLoading(false); showView('routine-choice-view'); } else { setDailyLoading(false); openSimpleLocationSetup(false); }
   } catch (error) { console.error('Application database initialization failed.', error); setDailyLoading(false); showView('home-view'); showDailyError(error, $('datePicker').value || 'the selected date'); }
 }
+window.addEventListener('beforeinstallprompt', (event) => { event.preventDefault(); deferredInstallPrompt = event; if ($('installApp')) $('installApp').hidden = false; });
+window.addEventListener('appinstalled', () => { deferredInstallPrompt = null; if ($('installApp')) $('installApp').hidden = true; });
 await bootstrap();

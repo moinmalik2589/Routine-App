@@ -1,154 +1,1528 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="color-scheme" content="light">
-    <meta name="theme-color" content="#f0fdf4">
-    <title>Moin Routine</title>
-  </head>
-  <body>
-    <div class="header-container">
-      <div>
-        <h1 id="userDisplayName">ROUTINE</h1>
-        <div id="clock">Loading clock...</div>
-        <div id="dayOfWeek"></div>
-        <button id="homeLocation" class="home-location" type="button" hidden></button>
-      </div>
-      <div class="right-controls">
-        <button class="hamburger" id="menuButton" aria-label="Open menu" aria-expanded="false">☰</button>
-        <div id="dropdownMenu" class="menu">
-          <button data-view="monthly-view">📅 Monthly Progress</button>
-          <button data-view="activity-view">📊 Activity Progress</button>
-          <button data-view="manage-view">⚙ Activity Management</button>
-          <button data-view="settings-view">👤 User Profile</button>
-          <button id="logoutButton">Logout</button>
-          <button id="adminMenuButton" data-view="admin-view" hidden>Admin</button>
-        </div>
-        <div id="home-controls">
-          <input type="date" id="datePicker" aria-label="Routine date">
-          <div class="nav-buttons">
-            <button id="previousDate">&larr; Prev</button>
-            <button id="nextDate">Next &rarr;</button>
-          </div>
-        </div>
-      </div>
+ <head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
+  <meta content="light dark" name="color-scheme"/>
+  <meta content="#22c55e" name="theme-color"/>
+  <meta content="Moin Routine — a private, offline-first habit and routine tracker with reminders, streaks and progress analytics." name="description"/>
+  <link href="/manifest.webmanifest" rel="manifest"/>
+  <link href="/icons/icon-192.png" rel="icon" type="image/png"/>
+  <link href="/icons/apple-touch-icon.png" rel="apple-touch-icon"/>
+  <title>
+   Moin Routine
+  </title>
+ </head>
+ <body>
+  <div class="header-container">
+   <div class="header-identity">
+    <h1 id="userDisplayName">
+     ROUTINE
+    </h1>
+    <div id="clock">
+     Loading clock...
     </div>
-
-    <main>
-      <section id="auth-view" class="view-section"><div class="card"><div class="center"><h2 class="management-title">Routine Account</h2></div><form id="loginForm" class="activity-form"><label>Email<input id="loginEmail" type="email" autocomplete="email" required></label><label>Password<input id="loginPassword" type="password" autocomplete="current-password" required></label><button class="home-btn" type="submit">Login</button></form><details><summary>Create account</summary><form id="signupForm" class="activity-form"><label>Name<input id="signupName" required></label><label>Email<input id="signupEmail" type="email" required></label><label>Password<input id="signupPassword" type="password" minlength="8" required></label><label>Confirm password<input id="signupConfirm" type="password" minlength="8" required></label><button class="home-btn" type="submit">Sign Up</button></form></details><button id="forgotPassword" class="nav-action" type="button">Forgot password</button><p id="authStatus" class="summary" aria-live="polite"></p></div></section>
-      <section id="home-view" class="view-section active">
-        <div class="card">
-          <div id="locationSaveDiagnostics" class="development-diagnostics" hidden></div>
-          <button class="daily-alarm-heading" id="dailyAlarmToggle" title="Tap to toggle all alarms for today">
-            <span id="dailyAlarmText">Daily Progress</span><span id="dailyAlarmIcon">🔔</span>
-          </button>
-          <div class="alarm-hint">Tap Title to toggle ALL alarms. Tap <span>Green</span> times to toggle individual alarms.</div>
-          <div class="progress-container"><div class="progress-ring" id="dailyProgressRing"><div class="progress-inner" id="dailyProgressText">0%</div></div></div>
-          <div class="routine-header"><div>Timing</div><div>Activity</div><div class="center">Status</div></div>
-          <div id="routine-list"><i>Loading data...</i></div>
-          <div class="bottom-timings" id="bottom-timings" hidden><p id="fajr-display"></p><p id="fast-display"></p></div>
+    <div id="dayOfWeek">
+    </div>
+    <button class="home-location" hidden="" id="homeLocation" type="button">
+    </button>
+   </div>
+   <div aria-live="polite" class="header-next-up" id="focusStrip">
+    <div class="focus-icon">
+     ⚡
+    </div>
+    <div class="header-focus-copy">
+     <span class="focus-label">
+      NEXT UP
+     </span>
+     <strong id="focusHabit">
+      Loading today’s routine…
+     </strong>
+     <small id="focusMeta">
+      Your next unfinished habit will appear here.
+     </small>
+    </div>
+   </div>
+   <div class="right-controls">
+    <button aria-label="Switch between light and dark mode" class="theme-toggle real-theme-toggle" id="themeToggle" title="Light / Dark mode" type="button">
+     <span aria-hidden="true" class="toggle-sun">
+      ☀
+     </span>
+     <span aria-hidden="true" class="toggle-track">
+      <span class="toggle-knob" id="themeToggleIcon">
+       ●
+      </span>
+     </span>
+     <span aria-hidden="true" class="toggle-moon">
+      ☾
+     </span>
+    </button>
+    <button aria-expanded="false" aria-label="Open menu" class="hamburger" id="menuButton">
+     ☰
+    </button>
+    <div class="menu" id="dropdownMenu">
+     <button data-view="analytics-view">
+      📈 Dashboard &amp; Insights
+     </button>
+     <button data-view="streaks-view">
+      🔥 Streaks &amp; Goals
+     </button>
+     <button data-view="achievements-view">
+      🏆 Achievements
+     </button>
+     <button data-view="monthly-view">
+      📅 Monthly Progress
+     </button>
+     <button data-view="activity-view">
+      📊 Activity Progress
+     </button>
+     <button data-view="manage-view">
+      ⚙ Activity Management
+     </button>
+     <button data-view="settings-view">
+      👤 User Profile
+     </button>
+     <button id="logoutButton">
+      Logout
+     </button>
+     <button data-view="admin-view" hidden="" id="adminMenuButton">
+      Admin
+     </button>
+    </div>
+   </div>
+  </div>
+  <main>
+   <section class="view-section" id="auth-view">
+    <div class="card">
+     <div class="center">
+      <h2 class="management-title">
+       Routine Account
+      </h2>
+     </div>
+     <form class="activity-form" id="loginForm">
+      <label>
+       Email
+       <input autocomplete="email" id="loginEmail" required="" type="email"/>
+      </label>
+      <label>
+       Password
+       <input autocomplete="current-password" id="loginPassword" required="" type="password"/>
+      </label>
+      <button class="home-btn" type="submit">
+       Login
+      </button>
+     </form>
+     <details>
+      <summary>
+       Create account
+      </summary>
+      <form class="activity-form" id="signupForm">
+       <label>
+        Name
+        <input id="signupName" required=""/>
+       </label>
+       <label>
+        Email
+        <input id="signupEmail" required="" type="email"/>
+       </label>
+       <label>
+        Password
+        <input id="signupPassword" minlength="8" required="" type="password"/>
+       </label>
+       <label>
+        Confirm password
+        <input id="signupConfirm" minlength="8" required="" type="password"/>
+       </label>
+       <button class="home-btn" type="submit">
+        Sign Up
+       </button>
+      </form>
+     </details>
+     <button class="nav-action" id="forgotPassword" type="button">
+      Forgot password
+     </button>
+     <p aria-live="polite" class="summary" id="authStatus">
+     </p>
+    </div>
+   </section>
+   <section class="view-section active" id="home-view">
+    <div aria-label="Change routine day" class="home-date-navigator" id="home-controls">
+     <button aria-label="Previous day" class="day-nav-arrow" id="previousDate" type="button">
+      <span class="nav-arrow-glyph">
+       ‹
+      </span>
+      <span class="nav-arrow-word">
+       Prev
+      </span>
+     </button>
+     <label class="date-pill">
+      <span id="dateNavLabel">
+       Today
+      </span>
+      <input aria-label="Routine date" id="datePicker" type="date"/>
+     </label>
+     <button aria-label="Next day" class="day-nav-arrow" id="nextDate" type="button">
+      <span class="nav-arrow-word">
+       Next
+      </span>
+      <span class="nav-arrow-glyph">
+       ›
+      </span>
+     </button>
+    </div>
+    <div class="card home-dashboard-card">
+     <div class="development-diagnostics" hidden="" id="locationSaveDiagnostics">
+     </div>
+     <button class="daily-alarm-heading" id="dailyAlarmToggle" title="Tap to toggle all alarms for today">
+      <span id="dailyAlarmText">
+       Daily Progress
+      </span>
+      <span id="dailyAlarmIcon">
+       🔔
+      </span>
+     </button>
+     <div class="alarm-hint">
+      Tap Title to toggle ALL alarms. Tap
+      <span>
+       Green
+      </span>
+      times to toggle individual alarms.
+     </div>
+     <div aria-label="Today progress" class="progress-showcase">
+      <div class="progress-side-stat">
+       <span class="stat-emoji">
+        🏆
+       </span>
+       <strong id="bestActiveStreak">
+        0
+       </strong>
+       <small>
+        Day Streak
+       </small>
+      </div>
+      <div class="progress-container">
+       <div class="progress-ring" id="dailyProgressRing">
+        <div class="progress-inner">
+         <strong id="dailyProgressText">
+          0%
+         </strong>
+         <small>
+          Today Progress
+         </small>
         </div>
-      </section>
-
-      <section id="monthly-view" class="view-section">
-        <div class="card">
-          <button class="home-btn" data-view="home-view">&larr; Back to Home</button>
-          <div class="center"><button class="clickable-title active" id="monthlyAlarmTitle">Monthly Progress 🔔</button></div>
-          <div class="controls-row"><input type="month" id="monthPicker" aria-label="Progress month"></div>
-          <div class="progress-container"><button class="progress-ring clickable" id="monthlyProgressRing" title="Click to toggle calculation mode"><span class="progress-inner" id="monthlyProgressText">0%</span></button><div class="click-hint">Tap ring to toggle Total / Up-to-Today</div></div>
-          <div id="monthly-status" class="summary">Loading...</div>
-          <div class="table-scroll"><table class="spreadsheet-grid" id="monthly-table"></table></div>
+       </div>
+      </div>
+      <div class="progress-side-stat">
+       <span class="stat-emoji">
+        🔥
+       </span>
+       <strong id="todayWinLabel">
+        0
+       </strong>
+       <small>
+        Today Wins
+       </small>
+      </div>
+      <div aria-hidden="true" class="sr-only">
+       <span id="todayDone">
+        0/0
+       </span>
+       <span id="todayRate">
+        0%
+       </span>
+       <span id="todayLeft">
+        0
+       </span>
+       <span id="momentumLabel">
+        Ready
+       </span>
+      </div>
+     </div>
+     <div class="completion-celebration" hidden="" id="completionCelebration">
+      ✨ Perfect day — every habit is complete!
+     </div>
+     <div class="today-habits-heading">
+      <div>
+       <span class="eyebrow">
+        YOUR ROUTINE
+       </span>
+       <h3>
+        Today Habits
+       </h3>
+      </div>
+      <span class="completion-count" id="habitCompletionBadge">
+       0/0 Completed
+      </span>
+     </div>
+     <div class="routine-header">
+      <div>
+       Timing
+      </div>
+      <div>
+       Activity
+      </div>
+      <div class="center">
+       Status
+      </div>
+     </div>
+     <div id="routine-list">
+      <i>
+       Loading data...
+      </i>
+     </div>
+     <div aria-label="Routine tools" class="home-feature-hub" id="homeFeatureHub">
+      <button data-view="analytics-view" type="button">
+       <span>
+        📊
+       </span>
+       <strong>
+        Analytics
+       </strong>
+       <small>
+        Trends &amp; heatmap
+       </small>
+      </button>
+      <button data-view="streaks-view" type="button">
+       <span>
+        🔥
+       </span>
+       <strong>
+        Streaks
+       </strong>
+       <small>
+        Goals &amp; momentum
+       </small>
+      </button>
+      <button data-view="achievements-view" type="button">
+       <span>
+        🏆
+       </span>
+       <strong>
+        Achievements
+       </strong>
+       <small>
+        Milestones
+       </small>
+      </button>
+      <button data-view="manage-view" type="button">
+       <span>
+        📅
+       </span>
+       <strong>
+        Schedule
+       </strong>
+       <small>
+        Habits &amp; timing
+       </small>
+      </button>
+      <button data-setting-action="reminders" type="button">
+       <span>
+        🔔
+       </span>
+       <strong>
+        Reminders
+       </strong>
+       <small>
+        Alerts &amp; sound
+       </small>
+      </button>
+      <button data-view="settings-view" type="button">
+       <span>
+        🎨
+       </span>
+       <strong>
+        Themes
+       </strong>
+       <small>
+        Appearance
+       </small>
+      </button>
+      <button data-setting-action="backup" type="button">
+       <span>
+        ☁️
+       </span>
+       <strong>
+        Backup
+       </strong>
+       <small>
+        Export &amp; restore
+       </small>
+      </button>
+      <button data-setting-action="prayer" type="button">
+       <span>
+        🌙
+       </span>
+       <strong>
+        Prayer/Fasting
+       </strong>
+       <small>
+        Daily timings
+       </small>
+      </button>
+     </div>
+     <div class="bottom-timings" hidden="" id="bottom-timings">
+      <p id="fajr-display">
+      </p>
+      <p id="fast-display">
+      </p>
+     </div>
+    </div>
+   </section>
+   <section class="view-section" id="analytics-view">
+    <div class="card analytics-card">
+     <div class="page-topline">
+      <button class="home-btn" data-view="home-view">
+       ← Back to Today
+      </button>
+      <div>
+       <p class="eyebrow">
+        PERFORMANCE CENTER
+       </p>
+       <h2 class="management-title">
+        Dashboard &amp; Insights
+       </h2>
+      </div>
+      <input aria-label="Analytics month" id="analyticsMonthPicker" type="month"/>
+     </div>
+     <div class="analytics-kpis">
+      <div class="kpi-card">
+       <span>
+        Completion rate
+       </span>
+       <strong id="analyticsRate">
+        0%
+       </strong>
+       <small>
+        Scheduled habits completed
+       </small>
+      </div>
+      <div class="kpi-card">
+       <span>
+        Total check-ins
+       </span>
+       <strong id="analyticsDone">
+        0
+       </strong>
+       <small>
+        Completed this period
+       </small>
+      </div>
+      <div class="kpi-card">
+       <span>
+        Current streak
+       </span>
+       <strong id="analyticsStreak">
+        0d
+       </strong>
+       <small>
+        Active days in a row
+       </small>
+      </div>
+      <div class="kpi-card">
+       <span>
+        Perfect days
+       </span>
+       <strong id="analyticsPerfect">
+        0
+       </strong>
+       <small>
+        Every scheduled habit done
+       </small>
+      </div>
+     </div>
+     <p class="summary" id="analyticsStatus">
+      Loading analytics…
+     </p>
+     <div class="analytics-grid">
+      <article class="insight-panel insight-wide">
+       <div class="panel-heading">
+        <div>
+         <p class="eyebrow">
+          TREND
+         </p>
+         <h3>
+          Daily consistency
+         </h3>
         </div>
-      </section>
-
-      <section id="activity-view" class="view-section">
-        <div class="card">
-          <button class="home-btn" data-view="home-view">&larr; Back to Home</button>
-          <div class="center"><button class="clickable-title" id="activityAlarmTitle">Activity Progress</button></div>
-          <div class="controls-row">
-            <select id="activitySelector" aria-label="Activity"></select>
-            <select id="activityViewType" aria-label="Period"><option value="weekly">Weekly</option><option value="monthly" selected>Monthly</option><option value="yearly">Yearly</option></select>
-          </div>
-          <div class="controls-row">
-            <input type="month" id="actMonthPicker" aria-label="Activity month">
-            <select id="actWeekPicker" aria-label="Week" hidden><option value="1">Week 1 (1st-7th)</option><option value="2">Week 2 (8th-14th)</option><option value="3">Week 3 (15th-21st)</option><option value="4">Week 4 (22nd-28th)</option><option value="5">Week 5 (29th+)</option></select>
-            <select id="actYearPicker" aria-label="Year" hidden></select>
-          </div>
-          <div class="progress-container"><button class="progress-ring clickable" id="activityProgressRing" title="Click to toggle calculation mode"><span class="progress-inner" id="activityProgressText">0%</span></button><div class="click-hint">Tap ring to toggle Total / Up-to-Today</div></div>
-          <div id="activity-status" class="summary">Loading...</div>
-          <div class="table-scroll"><table class="spreadsheet-grid" id="activity-table"></table></div>
+        <span class="panel-badge">
+         0–100%
+        </span>
+       </div>
+       <div class="chart-shell" id="consistencyChart">
+       </div>
+      </article>
+      <article class="insight-panel">
+       <div class="panel-heading">
+        <div>
+         <p class="eyebrow">
+          CALENDAR
+         </p>
+         <h3>
+          Consistency heatmap
+         </h3>
         </div>
-      </section>
-
-      <section id="manage-view" class="view-section">
-        <div class="card">
-          <button class="home-btn" data-view="home-view">&larr; Back to Home</button>
-          <div class="center"><h2 class="management-title">Activity Management</h2></div>
-          <form id="activityForm" class="activity-form">
-            <input type="hidden" id="editActivityId">
-            <label>Activity name<input type="text" id="activityName" maxlength="60" required></label>
-            <label>Schedule<select id="scheduleType"><option value="daily">Every day</option><option value="selected-weekdays">Selected weekdays</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option><option value="specific-date">One specific date</option><option value="specific-dates">Multiple specific dates</option><option value="date-range">Custom date range</option><option value="none">No recurring schedule</option></select></label>
-            <div id="weekdayFields" class="schedule-fields" hidden><span>Weekdays</span><div id="weekdayChoices" class="weekday-choices"></div></div>
-            <div id="weeklyFields" class="schedule-fields" hidden><label>Repeat every (weeks)<input type="number" id="intervalWeeks" min="1" value="1"></label><label>Starting<input type="date" id="scheduleAnchor"></label></div>
-            <div id="monthlyFields" class="schedule-fields" hidden><label>Day of month<input type="number" id="monthlyDay" min="1" max="31" value="1"></label></div>
-            <div id="yearlyFields" class="schedule-fields" hidden><label>Month<input type="number" id="yearlyMonth" min="1" max="12" value="1"></label><label>Day<input type="number" id="yearlyDay" min="1" max="31" value="1"></label></div>
-            <div id="specificDateFields" class="schedule-fields" hidden><label>Specific date<input type="date" id="specificDate"></label></div>
-            <div id="specificDatesFields" class="schedule-fields" hidden><label>Dates (comma separated)<input type="text" id="specificDates" placeholder="2026-08-10, 2026-08-21"></label></div>
-            <div id="rangeFields" class="schedule-fields" hidden><label>Start date<input type="date" id="rangeStart"></label><label>End date<input type="date" id="rangeEnd"></label></div>
-            <label class="form-checkbox"><input type="checkbox" id="activityEnabled" checked> Activity enabled</label>
-            <div class="time-slot-heading"><strong>Daily time slots</strong><button class="nav-action" type="button" id="addTimeSlot">Add Time</button></div>
-            <div id="timeSlotEditor"></div>
-            <div class="form-actions"><button class="home-btn" type="submit" id="saveActivity">Add Activity</button><button class="nav-action" type="button" id="cancelActivityEdit" hidden>Cancel</button></div>
-          </form>
-          <p id="management-status" class="summary" aria-live="polite"></p>
-          <div id="activity-management-list" class="management-list"></div>
-          <p class="management-help">Use arrows to reorder. Protected prayer mappings cannot be removed or changed.</p>
-          <label class="global-prayer-toggle"><input id="prayerRoutineToggle" type="checkbox"> Include Namaz &amp; Sehri in my routine</label>
+       </div>
+       <div id="monthHeatmap">
+       </div>
+       <div class="heat-legend">
+        <span>
+         Less
+        </span>
+        <i class="heat-0">
+        </i>
+        <i class="heat-1">
+        </i>
+        <i class="heat-2">
+        </i>
+        <i class="heat-3">
+        </i>
+        <i class="heat-4">
+        </i>
+        <span>
+         More
+        </span>
+       </div>
+      </article>
+      <article class="insight-panel">
+       <div class="panel-heading">
+        <div>
+         <p class="eyebrow">
+          HABITS
+         </p>
+         <h3>
+          Strongest habits
+         </h3>
         </div>
-      </section>
-
-      <section id="settings-view" class="view-section">
-        <div class="card">
-          <button class="home-btn" data-view="home-view">&larr; Back to Home</button>
-          <div class="center"><h2 class="management-title">User Profile</h2></div>
-          <form id="nameForm" class="activity-form profile-name-form"><label>Your name<input id="settingsDisplayName" maxlength="80" required></label><button class="home-btn" type="submit">Save Name</button></form>
-          <p id="profile-status" class="summary" aria-live="polite"></p>
-          <div id="accountSummary" class="bottom-timings"></div>
-          <div id="prayerProfileSettings"><div id="location-summary" class="bottom-timings"></div><button class="home-btn" id="changeLocation">Change Location</button><p><strong>Prayer calculation:</strong> <span id="automaticPrayerSummary"></span></p><details id="optionalAdjustments"><summary>Optional Prayer Time Adjustments</summary><p class="summary">Optional minute adjustments apply on top of the automatic local calculation.</p><form id="adjustmentForm" class="activity-form"><div id="settingsPrayerAdjustments" class="adjustment-grid"></div><label>Sehri before Fajr (minutes)<input id="settingsSehriOffset" type="number" min="0" max="180" step="1"></label><div class="form-actions"><button class="home-btn" type="submit">Save Adjustments</button><button class="nav-action" id="resetAdjustments" type="button">Reset to automatic defaults</button></div></form></details></div>
-          <details><summary>Backup &amp; Restore</summary><p class="summary">Backups contain local profile and routine history, never passwords or authentication tokens.</p><div class="form-actions"><button class="home-btn" id="exportBackup" type="button">Export JSON Backup</button><button class="nav-action" id="importBackup" type="button">Import JSON Backup</button></div><p id="backupStatus" class="summary"></p></details>
-          <details><summary>Alarm Permissions</summary><p class="summary">Precise alarms are a core routine feature so reminders can fire while the app is closed, the screen is locked, or the device is idle. Android may ask you to allow exact alarms and notifications.</p><button id="requestAlarmPermissions" class="home-btn" type="button">Review Alarm Permissions</button><p id="alarmPermissionStatus" class="summary"></p></details>
-          <details><summary>Privacy &amp; Account</summary><p class="summary">Routine history stays on this device unless you export a backup. Authentication profile and account status are stored in Firebase when configured.</p><div class="form-actions"><button id="requestAccountDeletion" class="nav-action" type="button">Request Account Deletion</button><button id="deleteLocalData" class="nav-action danger" type="button">Delete Local Data</button></div></details>
-          <details><summary>About</summary><p>Moin Routine <span id="appVersion">0.1.0</span></p><p>Offline-first routine tracking with local prayer calculations and Android alarms.</p></details>
+       </div>
+       <div id="habitRankChart">
+       </div>
+      </article>
+     </div>
+    </div>
+   </section>
+   <section class="view-section" id="streaks-view">
+    <div class="card feature-page-card">
+     <div class="feature-page-head">
+      <button class="feature-back" data-view="home-view" type="button">
+       ‹
+      </button>
+      <div>
+       <p class="eyebrow">
+        MOMENTUM
+       </p>
+       <h2>
+        Streaks &amp; Goals
+       </h2>
+      </div>
+     </div>
+     <div class="streak-hero">
+      <div class="streak-flame">
+       🔥
+      </div>
+      <strong id="streakCurrentHero">
+       0
+      </strong>
+      <span>
+       Current Best Habit Streak
+      </span>
+      <small>
+       Keep showing up — consistency compounds.
+      </small>
+     </div>
+     <div class="feature-stat-grid">
+      <article>
+       <span>
+        🔥
+       </span>
+       <strong id="streakBestActive">
+        0
+       </strong>
+       <small>
+        Best active streak
+       </small>
+      </article>
+      <article>
+       <span>
+        👑
+       </span>
+       <strong id="streakLongest">
+        0
+       </strong>
+       <small>
+        Longest stored streak
+       </small>
+      </article>
+      <article>
+       <span>
+        ✅
+       </span>
+       <strong id="streakTodayWins">
+        0
+       </strong>
+       <small>
+        Today wins
+       </small>
+      </article>
+     </div>
+     <div class="goal-card">
+      <div>
+       <strong>
+        Next milestone
+       </strong>
+       <small id="nextMilestoneCopy">
+        Complete habits to start a streak.
+       </small>
+      </div>
+      <div class="goal-progress">
+       <i id="nextMilestoneBar">
+       </i>
+      </div>
+     </div>
+     <div class="habit-streak-list" id="habitStreakList">
+     </div>
+    </div>
+   </section>
+   <section class="view-section" id="achievements-view">
+    <div class="card feature-page-card">
+     <div class="feature-page-head">
+      <button class="feature-back" data-view="home-view" type="button">
+       ‹
+      </button>
+      <div>
+       <p class="eyebrow">
+        MILESTONES
+       </p>
+       <h2>
+        Achievements
+       </h2>
+      </div>
+     </div>
+     <div class="achievement-summary">
+      <span>
+       🏆
+      </span>
+      <div>
+       <strong id="achievementUnlockedCount">
+        0 unlocked
+       </strong>
+       <small>
+        Every milestone represents repeated effort.
+       </small>
+      </div>
+     </div>
+     <div class="achievement-list" id="achievementList">
+     </div>
+    </div>
+   </section>
+   <section class="view-section" id="monthly-view">
+    <div class="card">
+     <button class="home-btn" data-view="home-view">
+      ← Back to Home
+     </button>
+     <div class="center">
+      <button class="clickable-title active" id="monthlyAlarmTitle">
+       Monthly Progress 🔔
+      </button>
+     </div>
+     <div class="controls-row">
+      <input aria-label="Progress month" id="monthPicker" type="month"/>
+     </div>
+     <div class="progress-container">
+      <button class="progress-ring clickable" id="monthlyProgressRing" title="Click to toggle calculation mode">
+       <span class="progress-inner" id="monthlyProgressText">
+        0%
+       </span>
+      </button>
+      <div class="click-hint">
+       Tap ring to toggle Total / Up-to-Today
+      </div>
+     </div>
+     <div class="summary" id="monthly-status">
+      Loading...
+     </div>
+     <div class="table-scroll">
+      <table class="spreadsheet-grid" id="monthly-table">
+      </table>
+     </div>
+    </div>
+   </section>
+   <section class="view-section" id="activity-view">
+    <div class="card">
+     <button class="home-btn" data-view="home-view">
+      ← Back to Home
+     </button>
+     <div class="center">
+      <button class="clickable-title" id="activityAlarmTitle">
+       Activity Progress
+      </button>
+     </div>
+     <div class="controls-row">
+      <select aria-label="Activity" id="activitySelector">
+      </select>
+      <select aria-label="Period" id="activityViewType">
+       <option value="weekly">
+        Weekly
+       </option>
+       <option selected="" value="monthly">
+        Monthly
+       </option>
+       <option value="yearly">
+        Yearly
+       </option>
+      </select>
+     </div>
+     <div class="controls-row">
+      <input aria-label="Activity month" id="actMonthPicker" type="month"/>
+      <select aria-label="Week" hidden="" id="actWeekPicker">
+       <option value="1">
+        Week 1 (1st-7th)
+       </option>
+       <option value="2">
+        Week 2 (8th-14th)
+       </option>
+       <option value="3">
+        Week 3 (15th-21st)
+       </option>
+       <option value="4">
+        Week 4 (22nd-28th)
+       </option>
+       <option value="5">
+        Week 5 (29th+)
+       </option>
+      </select>
+      <select aria-label="Year" hidden="" id="actYearPicker">
+      </select>
+     </div>
+     <div class="progress-container">
+      <button class="progress-ring clickable" id="activityProgressRing" title="Click to toggle calculation mode">
+       <span class="progress-inner" id="activityProgressText">
+        0%
+       </span>
+      </button>
+      <div class="click-hint">
+       Tap ring to toggle Total / Up-to-Today
+      </div>
+     </div>
+     <div class="summary" id="activity-status">
+      Loading...
+     </div>
+     <div class="table-scroll">
+      <table class="spreadsheet-grid" id="activity-table">
+      </table>
+     </div>
+    </div>
+   </section>
+   <section class="view-section" id="manage-view">
+    <div class="card">
+     <button class="home-btn" data-view="home-view">
+      ← Back to Home
+     </button>
+     <div class="center">
+      <h2 class="management-title">
+       Activity Management
+      </h2>
+     </div>
+     <form class="activity-form" id="activityForm">
+      <input id="editActivityId" type="hidden"/>
+      <label>
+       Activity name
+       <input id="activityName" maxlength="60" required="" type="text"/>
+      </label>
+      <label>
+       Schedule
+       <select id="scheduleType">
+        <option value="daily">
+         Every day
+        </option>
+        <option value="selected-weekdays">
+         Selected weekdays
+        </option>
+        <option value="weekly">
+         Weekly
+        </option>
+        <option value="monthly">
+         Monthly
+        </option>
+        <option value="yearly">
+         Yearly
+        </option>
+        <option value="specific-date">
+         One specific date
+        </option>
+        <option value="specific-dates">
+         Multiple specific dates
+        </option>
+        <option value="date-range">
+         Custom date range
+        </option>
+        <option value="none">
+         No recurring schedule
+        </option>
+       </select>
+      </label>
+      <div class="schedule-fields" hidden="" id="weekdayFields">
+       <span>
+        Weekdays
+       </span>
+       <div class="weekday-choices" id="weekdayChoices">
+       </div>
+      </div>
+      <div class="schedule-fields" hidden="" id="weeklyFields">
+       <label>
+        Repeat every (weeks)
+        <input id="intervalWeeks" min="1" type="number" value="1"/>
+       </label>
+       <label>
+        Starting
+        <input id="scheduleAnchor" type="date"/>
+       </label>
+      </div>
+      <div class="schedule-fields" hidden="" id="monthlyFields">
+       <label>
+        Day of month
+        <input id="monthlyDay" max="31" min="1" type="number" value="1"/>
+       </label>
+      </div>
+      <div class="schedule-fields" hidden="" id="yearlyFields">
+       <label>
+        Month
+        <input id="yearlyMonth" max="12" min="1" type="number" value="1"/>
+       </label>
+       <label>
+        Day
+        <input id="yearlyDay" max="31" min="1" type="number" value="1"/>
+       </label>
+      </div>
+      <div class="schedule-fields" hidden="" id="specificDateFields">
+       <label>
+        Specific date
+        <input id="specificDate" type="date"/>
+       </label>
+      </div>
+      <div class="schedule-fields" hidden="" id="specificDatesFields">
+       <label>
+        Dates (comma separated)
+        <input id="specificDates" placeholder="2026-08-10, 2026-08-21" type="text"/>
+       </label>
+      </div>
+      <div class="schedule-fields" hidden="" id="rangeFields">
+       <label>
+        Start date
+        <input id="rangeStart" type="date"/>
+       </label>
+       <label>
+        End date
+        <input id="rangeEnd" type="date"/>
+       </label>
+      </div>
+      <label class="form-checkbox">
+       <input checked="" id="activityEnabled" type="checkbox"/>
+       Activity enabled
+      </label>
+      <div class="time-slot-heading">
+       <strong>
+        Daily time slots
+       </strong>
+       <button class="nav-action" id="addTimeSlot" type="button">
+        Add Time
+       </button>
+      </div>
+      <div id="timeSlotEditor">
+      </div>
+      <div class="form-actions">
+       <button class="home-btn" id="saveActivity" type="submit">
+        Add Activity
+       </button>
+       <button class="nav-action" hidden="" id="cancelActivityEdit" type="button">
+        Cancel
+       </button>
+      </div>
+     </form>
+     <p aria-live="polite" class="summary" id="management-status">
+     </p>
+     <div class="management-list" id="activity-management-list">
+     </div>
+     <p class="management-help">
+      Use arrows to reorder. Protected prayer mappings cannot be removed or changed.
+     </p>
+     <label class="global-prayer-toggle">
+      <input id="prayerRoutineToggle" type="checkbox"/>
+      Include Namaz &amp; Sehri in my routine
+     </label>
+    </div>
+   </section>
+   <section class="view-section" id="settings-view">
+    <div class="card">
+     <button class="home-btn" data-view="home-view">
+      ← Back to Home
+     </button>
+     <div class="center">
+      <h2 class="management-title">
+       User Profile
+      </h2>
+     </div>
+     <div class="appearance-panel appearance-settings">
+      <div class="appearance-copy">
+       <p class="eyebrow">
+        APPEARANCE
+       </p>
+       <h3>
+        Choose your look
+       </h3>
+       <p class="summary">
+        Light and Dark are available from Home. Premium visual styles and accent colors live here.
+       </p>
+      </div>
+      <div aria-label="App theme" class="theme-picker" role="group">
+       <button class="theme-card" data-theme-mode="light" type="button">
+        <span class="theme-preview preview-light">
+         <i>
+         </i>
+         <b>
+         </b>
+        </span>
+        <strong>
+         Light
+        </strong>
+        <small>
+         Clean &amp; bright
+        </small>
+       </button>
+       <button class="theme-card" data-theme-mode="dark" type="button">
+        <span class="theme-preview preview-dark">
+         <i>
+         </i>
+         <b>
+         </b>
+        </span>
+        <strong>
+         Dark
+        </strong>
+        <small>
+         True black
+        </small>
+       </button>
+       <button class="theme-card" data-theme-mode="aurora" type="button">
+        <span class="theme-preview preview-aurora">
+         <i>
+         </i>
+         <b>
+         </b>
+        </span>
+        <strong>
+         Aurora
+        </strong>
+        <small>
+         Animated glow
+        </small>
+       </button>
+       <button class="theme-card" data-theme-mode="multicolor" type="button">
+        <span class="theme-preview preview-multi">
+         <i>
+         </i>
+         <b>
+         </b>
+        </span>
+        <strong>
+         Multicolor
+        </strong>
+        <small>
+         Colorful motion
+        </small>
+       </button>
+      </div>
+      <div class="accent-setting">
+       <div>
+        <strong>
+         Accent color
+        </strong>
+        <small>
+         Green is the default Routine color.
+        </small>
+       </div>
+       <div aria-label="Accent color" class="accent-swatches" role="group">
+        <button aria-label="Green" data-accent="emerald" type="button">
+        </button>
+        <button aria-label="Blue" data-accent="ocean" type="button">
+        </button>
+        <button aria-label="Purple" data-accent="violet" type="button">
+        </button>
+        <button aria-label="Orange" data-accent="sunset" type="button">
+        </button>
+        <button aria-label="Rose" data-accent="rose" type="button">
+        </button>
+       </div>
+      </div>
+      <button class="appearance-button settings-light-dark-shortcut" id="profileThemeToggle" type="button">
+       🌙 Switch Light / Dark
+      </button>
+     </div>
+     <div class="feedback-panel">
+      <div>
+       <p class="eyebrow">
+        FEEDBACK
+       </p>
+       <h3>
+        Make check-ins satisfying
+       </h3>
+       <p class="summary">
+        Tiny sound and haptic feedback when you complete a habit.
+       </p>
+      </div>
+      <div class="feedback-toggles">
+       <label class="switch-row">
+        <span>
+         🔊 Sound
+        </span>
+        <input checked="" id="soundFeedbackToggle" type="checkbox"/>
+       </label>
+       <label class="switch-row">
+        <span>
+         📳 Vibration
+        </span>
+        <input checked="" id="vibrationFeedbackToggle" type="checkbox"/>
+       </label>
+      </div>
+     </div>
+     <div class="webapp-panel">
+      <div>
+       <strong>
+        Install Moin Routine
+       </strong>
+       <p class="summary">
+        Use it from your home screen like an app — no Android Studio required.
+       </p>
+      </div>
+      <button class="home-btn" hidden="" id="installApp" type="button">
+       Install App
+      </button>
+     </div>
+     <form class="activity-form profile-name-form" id="nameForm">
+      <label>
+       Your name
+       <input id="settingsDisplayName" maxlength="80" required=""/>
+      </label>
+      <button class="home-btn" type="submit">
+       Save Name
+      </button>
+     </form>
+     <p aria-live="polite" class="summary" id="profile-status">
+     </p>
+     <div class="bottom-timings" id="accountSummary">
+     </div>
+     <div class="settings-feature-hub">
+      <button data-feature-view="analytics-view" type="button">
+       <span>
+        📊
+       </span>
+       <div>
+        <strong>
+         Analytics
+        </strong>
+        <small>
+         Trends &amp; heatmaps
+        </small>
+       </div>
+       <b>
+        ›
+       </b>
+      </button>
+      <button data-feature-view="streaks-view" type="button">
+       <span>
+        🔥
+       </span>
+       <div>
+        <strong>
+         Streaks &amp; Goals
+        </strong>
+        <small>
+         Momentum &amp; milestones
+        </small>
+       </div>
+       <b>
+        ›
+       </b>
+      </button>
+      <button data-feature-view="achievements-view" type="button">
+       <span>
+        🏆
+       </span>
+       <div>
+        <strong>
+         Achievements
+        </strong>
+        <small>
+         Unlock streak awards
+        </small>
+       </div>
+       <b>
+        ›
+       </b>
+      </button>
+      <button data-feature-view="manage-view" type="button">
+       <span>
+        🗓️
+       </span>
+       <div>
+        <strong>
+         Habit Scheduling
+        </strong>
+        <small>
+         Daily, weekly &amp; custom
+        </small>
+       </div>
+       <b>
+        ›
+       </b>
+      </button>
+      <button data-feature-action="reminders" type="button">
+       <span>
+        🔔
+       </span>
+       <div>
+        <strong>
+         Smart Reminders
+        </strong>
+        <small>
+         Notification support
+        </small>
+       </div>
+       <b>
+        ›
+       </b>
+      </button>
+      <button data-feature-action="backup" type="button">
+       <span>
+        ☁️
+       </span>
+       <div>
+        <strong>
+         Backup &amp; Restore
+        </strong>
+        <small>
+         Export or import your data
+        </small>
+       </div>
+       <b>
+        ›
+       </b>
+      </button>
+      <button data-feature-action="prayer" type="button">
+       <span>
+        🕌
+       </span>
+       <div>
+        <strong>
+         Prayer &amp; Fasting
+        </strong>
+        <small>
+         Local prayer and Sehri timing
+        </small>
+       </div>
+       <b>
+        ›
+       </b>
+      </button>
+      <button data-feature-action="privacy" type="button">
+       <span>
+        🔒
+       </span>
+       <div>
+        <strong>
+         Privacy
+        </strong>
+        <small>
+         Local-first data controls
+        </small>
+       </div>
+       <b>
+        ›
+       </b>
+      </button>
+     </div>
+     <div id="prayerProfileSettings">
+      <div class="bottom-timings" id="location-summary">
+      </div>
+      <button class="home-btn" id="changeLocation">
+       Change Location
+      </button>
+      <p>
+       <strong>
+        Prayer calculation:
+       </strong>
+       <span id="automaticPrayerSummary">
+       </span>
+      </p>
+      <details id="optionalAdjustments">
+       <summary>
+        Optional Prayer Time Adjustments
+       </summary>
+       <p class="summary">
+        Optional minute adjustments apply on top of the automatic local calculation.
+       </p>
+       <form class="activity-form" id="adjustmentForm">
+        <div class="adjustment-grid" id="settingsPrayerAdjustments">
         </div>
-      </section>
-
-      <section id="routine-choice-view" class="view-section"><div class="card"><div class="center"><h2 class="management-title">Choose your routine</h2><p>You can change activities later.</p></div><div class="routine-choice-grid"><button class="home-btn" id="choosePredefined" type="button"><strong>Use Predefined Routine</strong><span>Start with the complete routine.</span></button><button class="home-btn" id="chooseCustom" type="button"><strong>Create My Own Routine</strong><span>Start with prayer activities and add your own.</span></button></div><p id="routine-choice-status" class="summary"></p></div></section>
-      <section id="admin-view" class="view-section"><div class="card"><button class="home-btn" data-view="home-view">← Back to Home</button><h2 class="management-title">Subscription Administration</h2><label>Search users<input id="adminSearch" type="search"></label><div class="controls-row"><label>Subscription start<input id="adminStart" type="date"></label><label>Subscription end<input id="adminEnd" type="date"></label></div><button id="adminRefresh" class="nav-action" type="button">Refresh</button><p id="adminStatus" class="summary"></p><div id="adminUsers" class="management-list"></div></div></section>
-
-      <section id="location-view" class="view-section">
-        <div class="card location-card">
-          <div class="center"><h2 class="management-title">Location Setup</h2><p>Enter your name, choose your location, and start your routine.</p></div>
-          <label>Your name<input id="profileDisplayName" maxlength="80" required></label>
-          <div class="location-choice-row"><button class="home-btn" id="detectLocation" type="button">Detect My Location</button><button class="home-btn" id="searchCityChoice" type="button">Search City</button><button class="home-btn" id="selectMapChoice" type="button">Select on Map</button></div>
-          <div id="mapPanel" hidden><div id="locationMap" class="location-map"></div><p id="mapProviderLabel" class="provider-label"></p><button class="nav-action" id="confirmMapLocation" type="button">Confirm Marker</button></div>
-          <div class="location-divider">Search City</div>
-          <label class="location-search">City search<input type="search" id="locationSearch" value="Ghaziabad" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="locationResults"></label>
-          <p id="locationProviderLabel" class="provider-label"></p><p id="locationProviderMessage" class="summary" aria-live="polite"></p>
-          <div id="locationResults" class="location-results" role="listbox"></div>
-          <form id="locationForm" class="activity-form">
-            <input id="profilePlaceId" type="hidden"><input id="profileFormattedAddress" type="hidden">
-            <div class="confirmed-location"><label>City<input id="profileCity" readonly required></label><label>State/region<input id="profileState" readonly></label><label>Country<input id="profileCountry" readonly required></label><label>Timezone<input id="profileTimezone" readonly required></label></div>
-            <details class="development-advanced"><summary>Advanced / Developer coordinates</summary><label>Latitude<input id="profileLatitude" type="number" step="any" required></label><label>Longitude<input id="profileLongitude" type="number" step="any" required></label></details>
-            <input id="profileMethod" type="hidden"><input id="profileMadhab" type="hidden"><input id="profileHighLatitudeRule" type="hidden"><input id="profilePolarCircle" type="hidden"><input id="profileShafaq" type="hidden"><input id="profileFajrAngle" type="hidden"><input id="profileIshaAngle" type="hidden"><input id="profileIshaInterval" type="hidden"><input id="profileSehriOffset" type="hidden"><div id="prayerAdjustments" hidden></div>
-            <p id="location-status" class="summary" aria-live="polite"></p>
-            <div id="prayerDiagnostics" class="development-diagnostics" hidden></div>
-            <div id="prayerInspector" class="development-inspector" hidden><h3>Prayer Calculation Inspector</h3><label>Inspection date<input id="inspectorDate" type="date"></label><button class="nav-action" id="runPrayerInspector" type="button">Inspect Calculation</button><pre id="prayerInspectorOutput"></pre></div>
-            <div class="form-actions"><button class="home-btn" type="submit">Confirm &amp; Save</button><button class="nav-action" type="button" id="cancelLocation" hidden>Cancel</button></div>
-          </form>
+        <label>
+         Sehri before Fajr (minutes)
+         <input id="settingsSehriOffset" max="180" min="0" step="1" type="number"/>
+        </label>
+        <div class="form-actions">
+         <button class="home-btn" type="submit">
+          Save Adjustments
+         </button>
+         <button class="nav-action" id="resetAdjustments" type="button">
+          Reset to automatic defaults
+         </button>
         </div>
-      </section>
-    </main>
-    <script type="module" src="/src/main.js"></script>
-  </body>
+       </form>
+      </details>
+     </div>
+     <details id="backupRestoreDetails">
+      <summary>
+       Backup &amp; Restore
+      </summary>
+      <p class="summary">
+       Backups contain local profile and routine history, never passwords or authentication tokens.
+      </p>
+      <div class="form-actions">
+       <button class="home-btn" id="exportBackup" type="button">
+        Export JSON Backup
+       </button>
+       <button class="nav-action" id="importBackup" type="button">
+        Import JSON Backup
+       </button>
+      </div>
+      <p class="summary" id="backupStatus">
+      </p>
+     </details>
+     <details id="reminderStatusDetails">
+      <summary>
+       Reminder Status
+      </summary>
+      <p class="summary">
+       The web app keeps your routine and progress offline. Browser notification behavior depends on your browser and device.
+      </p>
+      <button class="home-btn" id="requestAlarmPermissions" type="button">
+       Check Reminder Support
+      </button>
+      <p class="summary" id="alarmPermissionStatus">
+      </p>
+     </details>
+     <details id="privacyAccountDetails">
+      <summary>
+       Privacy &amp; Account
+      </summary>
+      <p class="summary">
+       Routine history stays on this device unless you export a backup. Authentication profile and account status are stored in Firebase when configured.
+      </p>
+      <div class="form-actions">
+       <button class="nav-action" id="requestAccountDeletion" type="button">
+        Request Account Deletion
+       </button>
+       <button class="nav-action danger" id="deleteLocalData" type="button">
+        Delete Local Data
+       </button>
+      </div>
+     </details>
+     <details>
+      <summary>
+       About
+      </summary>
+      <p>
+       Moin Routine
+       <span id="appVersion">
+        0.1.0
+       </span>
+      </p>
+      <p>
+       Offline-first routine tracking, progress analytics, local prayer calculations and installable PWA support.
+      </p>
+     </details>
+    </div>
+   </section>
+   <section class="view-section" id="routine-choice-view">
+    <div class="card">
+     <div class="center">
+      <h2 class="management-title">
+       Choose your routine
+      </h2>
+      <p>
+       You can change activities later.
+      </p>
+     </div>
+     <div class="routine-choice-grid">
+      <button class="home-btn" id="choosePredefined" type="button">
+       <strong>
+        Use Predefined Routine
+       </strong>
+       <span>
+        Start with the complete routine.
+       </span>
+      </button>
+      <button class="home-btn" id="chooseCustom" type="button">
+       <strong>
+        Create My Own Routine
+       </strong>
+       <span>
+        Start with prayer activities and add your own.
+       </span>
+      </button>
+     </div>
+     <p class="summary" id="routine-choice-status">
+     </p>
+    </div>
+   </section>
+   <section class="view-section" id="admin-view">
+    <div class="card">
+     <button class="home-btn" data-view="home-view">
+      ← Back to Home
+     </button>
+     <h2 class="management-title">
+      Subscription Administration
+     </h2>
+     <label>
+      Search users
+      <input id="adminSearch" type="search"/>
+     </label>
+     <div class="controls-row">
+      <label>
+       Subscription start
+       <input id="adminStart" type="date"/>
+      </label>
+      <label>
+       Subscription end
+       <input id="adminEnd" type="date"/>
+      </label>
+     </div>
+     <button class="nav-action" id="adminRefresh" type="button">
+      Refresh
+     </button>
+     <p class="summary" id="adminStatus">
+     </p>
+     <div class="management-list" id="adminUsers">
+     </div>
+    </div>
+   </section>
+   <section class="view-section" id="location-view">
+    <div class="card location-card">
+     <div class="center">
+      <h2 class="management-title">
+       Location Setup
+      </h2>
+      <p>
+       Enter your name, choose your location, and start your routine.
+      </p>
+     </div>
+     <label>
+      Your name
+      <input id="profileDisplayName" maxlength="80" required=""/>
+     </label>
+     <div class="location-choice-row">
+      <button class="home-btn" id="detectLocation" type="button">
+       Detect My Location
+      </button>
+      <button class="home-btn" id="searchCityChoice" type="button">
+       Search City
+      </button>
+      <button class="home-btn" id="selectMapChoice" type="button">
+       Select on Map
+      </button>
+     </div>
+     <div hidden="" id="mapPanel">
+      <div class="location-map" id="locationMap">
+      </div>
+      <p class="provider-label" id="mapProviderLabel">
+      </p>
+      <button class="nav-action" id="confirmMapLocation" type="button">
+       Confirm Marker
+      </button>
+     </div>
+     <div class="location-divider">
+      Search City
+     </div>
+     <label class="location-search">
+      City search
+      <input aria-autocomplete="list" aria-controls="locationResults" aria-expanded="false" autocomplete="off" id="locationSearch" role="combobox" type="search" value="Ghaziabad"/>
+     </label>
+     <p class="provider-label" id="locationProviderLabel">
+     </p>
+     <p aria-live="polite" class="summary" id="locationProviderMessage">
+     </p>
+     <div class="location-results" id="locationResults" role="listbox">
+     </div>
+     <form class="activity-form" id="locationForm">
+      <input id="profilePlaceId" type="hidden"/>
+      <input id="profileFormattedAddress" type="hidden"/>
+      <div class="confirmed-location">
+       <label>
+        City
+        <input id="profileCity" readonly="" required=""/>
+       </label>
+       <label>
+        State/region
+        <input id="profileState" readonly=""/>
+       </label>
+       <label>
+        Country
+        <input id="profileCountry" readonly="" required=""/>
+       </label>
+       <label>
+        Timezone
+        <input id="profileTimezone" readonly="" required=""/>
+       </label>
+      </div>
+      <details class="development-advanced">
+       <summary>
+        Advanced / Developer coordinates
+       </summary>
+       <label>
+        Latitude
+        <input id="profileLatitude" required="" step="any" type="number"/>
+       </label>
+       <label>
+        Longitude
+        <input id="profileLongitude" required="" step="any" type="number"/>
+       </label>
+      </details>
+      <input id="profileMethod" type="hidden"/>
+      <input id="profileMadhab" type="hidden"/>
+      <input id="profileHighLatitudeRule" type="hidden"/>
+      <input id="profilePolarCircle" type="hidden"/>
+      <input id="profileShafaq" type="hidden"/>
+      <input id="profileFajrAngle" type="hidden"/>
+      <input id="profileIshaAngle" type="hidden"/>
+      <input id="profileIshaInterval" type="hidden"/>
+      <input id="profileSehriOffset" type="hidden"/>
+      <div hidden="" id="prayerAdjustments">
+      </div>
+      <p aria-live="polite" class="summary" id="location-status">
+      </p>
+      <div class="development-diagnostics" hidden="" id="prayerDiagnostics">
+      </div>
+      <div class="development-inspector" hidden="" id="prayerInspector">
+       <h3>
+        Prayer Calculation Inspector
+       </h3>
+       <label>
+        Inspection date
+        <input id="inspectorDate" type="date"/>
+       </label>
+       <button class="nav-action" id="runPrayerInspector" type="button">
+        Inspect Calculation
+       </button>
+       <pre id="prayerInspectorOutput"></pre>
+      </div>
+      <div class="form-actions">
+       <button class="home-btn" type="submit">
+        Confirm &amp; Save
+       </button>
+       <button class="nav-action" hidden="" id="cancelLocation" type="button">
+        Cancel
+       </button>
+      </div>
+     </form>
+    </div>
+   </section>
+  </main>
+  <button aria-label="Add a habit" class="quick-add-fab" data-view="manage-view" id="quickAddHabit" title="Add habit" type="button">
+   ＋
+  </button>
+  <div aria-live="polite" class="app-toast" hidden="" id="appToast" role="status">
+  </div>
+  <div aria-labelledby="allDoneTitle" aria-modal="true" class="all-done-modal" hidden="" id="allDoneModal" role="dialog">
+   <div aria-hidden="true" class="all-done-confetti">
+    <i>
+    </i>
+    <i>
+    </i>
+    <i>
+    </i>
+    <i>
+    </i>
+    <i>
+    </i>
+    <i>
+    </i>
+    <i>
+    </i>
+    <i>
+    </i>
+    <i>
+    </i>
+    <i>
+    </i>
+    <i>
+    </i>
+    <i>
+    </i>
+   </div>
+   <div class="all-done-card">
+    <div class="all-done-badge">
+     <span>
+      ✓
+     </span>
+    </div>
+    <p class="eyebrow">
+     PERFECT DAY
+    </p>
+    <h2 id="allDoneTitle">
+     All Done!
+    </h2>
+    <p>
+     You completed every activity for today.
+    </p>
+    <div class="all-done-stats">
+     <div>
+      <strong id="allDoneWins">
+       0
+      </strong>
+      <small>
+       Today Wins
+      </small>
+     </div>
+     <div>
+      <strong id="allDoneStreak">
+       0
+      </strong>
+      <small>
+       Best Streak
+      </small>
+     </div>
+    </div>
+    <button class="home-btn" id="closeAllDone" type="button">
+     Great job 🎉
+    </button>
+   </div>
+  </div>
+  <nav aria-label="Main navigation" class="bottom-nav" id="bottomNav">
+   <button data-nav-view="analytics-view" data-view="analytics-view" type="button">
+    <span class="nav-icon">
+     ▥
+    </span>
+    <span>
+     Dashboard
+    </span>
+   </button>
+   <button class="active" data-nav-view="home-view" data-view="home-view" type="button">
+    <span class="nav-home-orb">
+     ⌂
+    </span>
+    <span>
+     Home
+    </span>
+   </button>
+   <button data-nav-view="settings-view" data-view="settings-view" type="button">
+    <span class="nav-icon">
+     ◉
+    </span>
+    <span>
+     Profile
+    </span>
+   </button>
+  </nav>
+  <script src="/src/main.js" type="module">
+  </script>
+ </body>
 </html>
+
