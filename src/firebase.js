@@ -1,7 +1,11 @@
-import { initializeApp } from 'firebase/app';
-import { getAnalytics, isSupported, logEvent } from 'firebase/analytics';
+import { getApp, getApps, initializeApp } from 'firebase/app';
+import {
+  getAnalytics,
+  isSupported as analyticsIsSupported,
+  logEvent,
+} from 'firebase/analytics';
 
-const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: "AIzaSyAPBLsOF5mVtVaDY_b44RRcKI0es793Coc",
   authDomain: "moin-malik-routine-app.firebaseapp.com",
   projectId: "moin-malik-routine-app",
@@ -11,40 +15,54 @@ const firebaseConfig = {
   measurementId: "G-CBRTQGQGBQ"
 };
 
-let analytics = null;
-let ready = false;
+export function firebaseConfigured() {
+  const required = [
+    firebaseConfig.apiKey,
+    firebaseConfig.authDomain,
+    firebaseConfig.projectId,
+    firebaseConfig.appId,
+  ];
 
-function configured() {
-  return !firebaseConfig.apiKey.startsWith('AIzaSyAPBLsOF5mVtVaDY_b44RRcKI0es793Coc')
-    && !firebaseConfig.appId.startsWith('1:129745587104:web:e8a4ade1a3138b1c1772c5')
-    && !firebaseConfig.measurementId.startsWith('G-CBRTQGQGBQ');
+  return required.every(
+    (value) => value && !String(value).startsWith('PASTE_'),
+  );
 }
 
+export function getFirebaseApp() {
+  if (!firebaseConfigured()) return null;
+  return getApps().length ? getApp() : initializeApp(firebaseConfig);
+}
+
+let analytics = null;
+
 export async function initFirebaseAnalytics() {
-  if (!configured()) {
-    console.info('[Firebase] Add your config in src/firebase.js');
+  const app = getFirebaseApp();
+
+  if (!app || !firebaseConfig.measurementId?.startsWith('G-')) {
+    console.info('[Firebase] Analytics is not configured yet.');
     return false;
   }
 
   try {
-    if (!(await isSupported())) return false;
-    const app = initializeApp(firebaseConfig);
+    if (!(await analyticsIsSupported())) return false;
+
     analytics = getAnalytics(app);
-    ready = true;
     logEvent(analytics, 'app_opened');
+
     console.info('[Firebase] Analytics initialized.');
     return true;
   } catch (error) {
-    console.error('[Firebase] Analytics failed:', error);
+    console.warn('[Firebase] Analytics could not start.', error);
     return false;
   }
 }
 
 export function trackEvent(name, params = {}) {
-  if (!ready || !analytics) return;
+  if (!analytics) return;
+
   try {
     logEvent(analytics, name, params);
   } catch (error) {
-    console.warn('[Firebase] Event failed:', name, error);
+    console.warn(`[Firebase] Event "${name}" was not recorded.`, error);
   }
 }

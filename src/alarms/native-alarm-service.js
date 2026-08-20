@@ -1,3 +1,59 @@
-import { Capacitor, registerPlugin } from '@capacitor/core'; import { createAlarmSpec } from './alarm-model.js';
-const NativeAlarm = registerPlugin('RoutineAlarm');
-export class NativeAlarmService { get available() { return Capacitor.isNativePlatform(); } async permissionState() { return this.available ? NativeAlarm.permissionState() : { notifications: 'granted', exact: false, fallback: true }; } async requestPermissions() { return this.available ? NativeAlarm.requestPermissions() : { notifications: 'granted', exact: false }; } async schedule(input) { const spec = createAlarmSpec(input); if (this.available) await NativeAlarm.schedule(spec); return spec; } async cancel(id) { if (this.available) await NativeAlarm.cancel({ id: Number(id) }); } async cancelAll() { if (this.available) await NativeAlarm.cancelAll(); } }
+import { createAlarmSpec } from './alarm-model.js';
+
+/**
+ * Browser/PWA alarm adapter.
+ *
+ * Native Android alarm scheduling used to live here through Capacitor.
+ * The app is now web-first, so this adapter keeps the same public API
+ * without importing native-only packages.
+ */
+export class NativeAlarmService {
+  get available() {
+    return false;
+  }
+
+  async permissionState() {
+    if (!('Notification' in window)) {
+      return 'unsupported';
+    }
+
+    return Notification.permission;
+  }
+
+  async requestPermission() {
+    if (!('Notification' in window)) {
+      return 'unsupported';
+    }
+
+    if (Notification.permission === 'granted') {
+      return 'granted';
+    }
+
+    try {
+      return await Notification.requestPermission();
+    } catch (error) {
+      console.warn('Notification permission request failed.', error);
+      return 'denied';
+    }
+  }
+
+  async schedule(activity, date, time) {
+    // Native background alarms are intentionally unavailable in the web build.
+    // Returning the normalized alarm spec keeps the rest of the app logic stable.
+    return createAlarmSpec(activity, date, time);
+  }
+
+  async cancel() {
+    return true;
+  }
+
+  async cancelAll() {
+    return true;
+  }
+
+  async sync() {
+    return true;
+  }
+}
+
+export const nativeAlarmService = new NativeAlarmService();

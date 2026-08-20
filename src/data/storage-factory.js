@@ -1,3 +1,11 @@
-import { Capacitor } from '@capacitor/core'; import { IndexedDbAdapter } from './indexeddb-adapter.js'; import { SQLiteAdapter } from './sqlite-adapter.js'; import { STORE_NAMES } from './models.js';
-export async function migrateIndexedDbToSqliteOnce(sqlite, indexedDb = new IndexedDbAdapter()) { await sqlite.open(); if (await sqlite.get(STORE_NAMES.metadata, 'indexedDbMigration')) return { migrated: false, reason: 'already-complete' }; const existing = await sqlite.getAll(STORE_NAMES.activities); if (existing.length) { await sqlite.put(STORE_NAMES.metadata, { key: 'indexedDbMigration', value: 'skipped-nonempty', validatedAt: new Date().toISOString() }); return { migrated: false, reason: 'sqlite-nonempty' }; } try { await indexedDb.open(); const data = Object.fromEntries(await Promise.all(Object.values(STORE_NAMES).map(async (store) => [store, await indexedDb.getAll(store)]))); if (!Object.values(data).some((records) => records.length)) return { migrated: false, reason: 'indexeddb-empty' }; await sqlite.replaceAll(data); for (const store of Object.values(STORE_NAMES)) if ((await sqlite.getAll(store)).length !== data[store].length) throw new Error(`SQLite migration validation failed for ${store}.`); await sqlite.put(STORE_NAMES.metadata, { key: 'indexedDbMigration', value: 'complete', validatedAt: new Date().toISOString() }); return { migrated: true }; } catch (error) { return { migrated: false, reason: 'unavailable', error }; } }
-export async function createStorageAdapter() { if (!Capacitor.isNativePlatform()) return new IndexedDbAdapter(); const sqlite = new SQLiteAdapter(); await migrateIndexedDbToSqliteOnce(sqlite); return sqlite; }
+import { IndexedDbAdapter } from './indexeddb-adapter.js';
+
+/**
+ * Storage factory for the web/PWA build.
+ *
+ * The Android SQLite path has been removed intentionally. IndexedDB gives the
+ * installed PWA persistent browser storage without requiring Capacitor.
+ */
+export async function createStorageAdapter() {
+  return new IndexedDbAdapter();
+}

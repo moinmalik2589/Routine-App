@@ -1,3 +1,61 @@
-import { Capacitor } from '@capacitor/core'; import { Filesystem, Directory, Encoding } from '@capacitor/filesystem'; import { Share } from '@capacitor/share'; import { FilePicker } from '@capawesome/capacitor-file-picker';
-export async function saveBackupFile(json) { const name = `moin-routine-backup-${new Date().toISOString().slice(0, 10)}.json`; if (Capacitor.isNativePlatform()) { const saved = await Filesystem.writeFile({ path: `backups/${name}`, data: json, directory: Directory.Documents, encoding: Encoding.UTF8, recursive: true }); await Share.share({ title: 'Routine backup', url: saved.uri, dialogTitle: 'Save routine backup' }); return saved.uri; } const url = URL.createObjectURL(new Blob([json], { type: 'application/json' })); const link = document.createElement('a'); link.href = url; link.download = name; link.click(); URL.revokeObjectURL(url); return name; }
-export async function pickBackupFile() { if (Capacitor.isNativePlatform()) { const picked = await FilePicker.pickFiles({ types: ['application/json'], readData: true, limit: 1 }); const file = picked.files[0]; if (!file) throw new Error('No backup selected.'); if (file.data) return atob(file.data); const read = await Filesystem.readFile({ path: file.path }); return read.data; } return new Promise((resolve, reject) => { const input = document.createElement('input'); input.type = 'file'; input.accept = 'application/json,.json'; input.onchange = async () => { try { resolve(await input.files[0].text()); } catch (error) { reject(error); } }; input.click(); }); }
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+
+  link.href = url;
+  link.download = filename;
+  link.style.display = 'none';
+
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+export async function saveBackupFile(data, filename = 'moin-routine-backup.json') {
+  const json = typeof data === 'string'
+    ? data
+    : JSON.stringify(data, null, 2);
+
+  const blob = new Blob([json], {
+    type: 'application/json;charset=utf-8',
+  });
+
+  downloadBlob(blob, filename);
+  return true;
+}
+
+export async function pickBackupFile() {
+  return new Promise((resolve, reject) => {
+    const input = document.createElement('input');
+
+    input.type = 'file';
+    input.accept = '.json,application/json';
+    input.style.display = 'none';
+
+    input.addEventListener(
+      'change',
+      async () => {
+        try {
+          const file = input.files?.[0];
+
+          if (!file) {
+            resolve(null);
+            return;
+          }
+
+          resolve(await file.text());
+        } catch (error) {
+          reject(error);
+        } finally {
+          input.remove();
+        }
+      },
+      { once: true },
+    );
+
+    document.body.appendChild(input);
+    input.click();
+  });
+}

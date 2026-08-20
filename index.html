@@ -95,9 +95,11 @@
    <section class="view-section" id="auth-view">
     <div class="card">
      <div class="center">
-      <h2 class="management-title">
-       Routine Account
-      </h2>
+      <div class="auth-brand-mark" aria-hidden="true">✓</div>
+      <h2 class="management-title">Welcome to Moin Routine</h2>
+      <p class="auth-intro">
+       Sign in to continue, or create your account to start tracking your routine.
+      </p>
      </div>
      <form class="activity-form" id="loginForm">
       <label>
@@ -119,19 +121,19 @@
       <form class="activity-form" id="signupForm">
        <label>
         Name
-        <input id="signupName" required=""/>
+        <input autocomplete="name" id="signupName" required=""/>
        </label>
        <label>
         Email
-        <input id="signupEmail" required="" type="email"/>
+        <input autocomplete="email" id="signupEmail" required="" type="email"/>
        </label>
        <label>
         Password
-        <input id="signupPassword" minlength="8" required="" type="password"/>
+        <input autocomplete="new-password" id="signupPassword" minlength="8" required="" type="password"/>
        </label>
        <label>
         Confirm password
-        <input id="signupConfirm" minlength="8" required="" type="password"/>
+        <input autocomplete="new-password" id="signupConfirm" minlength="8" required="" type="password"/>
        </label>
        <button class="home-btn" type="submit">
         Sign Up
@@ -1521,7 +1523,7 @@
     </span>
    </button>
   </nav>
-  <script src="/src/main.js" type="module">
+  <script src="./src/main.js" type="module">
   </script>
  </body>
 </html>

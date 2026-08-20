@@ -11,18 +11,11 @@
     "test:browser": "node scripts/autocomplete-browser-smoke.mjs"
   },
   "dependencies": {
-    "@capacitor-community/sqlite": "^7.0.3",
-    "@capacitor/android": "^7.4.3",
-    "@capacitor/core": "^7.4.3",
-    "@capacitor/filesystem": "^7.1.8",
-    "@capacitor/share": "^7.0.4",
-    "@capawesome/capacitor-file-picker": "^7.2.0",
     "adhan": "^4.4.4",
     "firebase": "^12.17.0",
     "tz-lookup": "^6.1.25"
   },
   "devDependencies": {
-    "@capacitor/cli": "^7.4.3",
     "fake-indexeddb": "^6.2.5",
     "jsdom": "^30.0.1",
     "vite": "^7.1.3"

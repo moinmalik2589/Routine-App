@@ -414,7 +414,24 @@ function bindEvents() {
   $('installApp').addEventListener('click', async () => { if (!deferredInstallPrompt) return; deferredInstallPrompt.prompt(); await deferredInstallPrompt.userChoice; deferredInstallPrompt = null; $('installApp').hidden = true; });
   $('menuButton').addEventListener('click', (event) => { event.stopPropagation(); const open = $('dropdownMenu').classList.toggle('show'); $('menuButton').setAttribute('aria-expanded', String(open)); }); document.addEventListener('click', () => $('dropdownMenu').classList.remove('show'));
   document.querySelectorAll('[data-view]').forEach((button) => button.addEventListener('click', () => showView(button.dataset.view)));
-  $('loginForm').addEventListener('submit', async (event) => { event.preventDefault(); try { await authService.login($('loginEmail').value, $('loginPassword').value); location.reload(); } catch (error) { $('authStatus').textContent = error.message; } });
+  $('loginForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    $('authStatus').textContent = 'Signing in…';
+
+    try {
+      await authService.login(
+        $('loginEmail').value,
+        $('loginPassword').value,
+      );
+      trackEvent('login_success');
+      location.reload();
+    } catch (error) {
+      $('authStatus').textContent =
+        error.code === 'auth/invalid-credential'
+          ? 'Email or password is incorrect.'
+          : error.message;
+    }
+  });
   $('signupForm').addEventListener('submit', async (event) => { event.preventDefault(); try { await authService.signup({ displayName: $('signupName').value, email: $('signupEmail').value, password: $('signupPassword').value, confirmPassword: $('signupConfirm').value }); $('authStatus').textContent = 'Verification email sent. Verify your email, then ask the owner to activate your account.'; } catch (error) { $('authStatus').textContent = error.message; } });
   $('forgotPassword').addEventListener('click', async () => { const email = $('loginEmail').value; if (!email) { $('authStatus').textContent = 'Enter your email first.'; return; } try { await authService.resetPassword(email); $('authStatus').textContent = 'Password reset email sent.'; } catch (error) { $('authStatus').textContent = error.message; } });
   $('logoutButton').addEventListener('click', async () => { if (authService) await authService.logout(); location.reload(); });
@@ -481,7 +498,57 @@ async function bootstrap() {
   dailyLoader = new DailyLoadController({ repository: routineService, onLoading: (loading) => { setDailyLoading(loading); if (loading) { state.day = null; $('routine-list').innerHTML = '<i>Loading data...</i>'; $('bottom-timings').hidden = true; } }, onSuccess: (day) => { state.day = day; renderDay(); updatePrayerDiagnostics(); }, onError: showDailyError });
   bindEvents(); setDailyLoading(true);
   try {
-    if (authService) { const user = await authService.waitForUser(); if (!user) { setDailyLoading(false); $('menuButton').hidden = true; showView('auth-view'); return; } let access; try { access = navigator.onLine ? await authService.access(user) : authService.cachedAccess(user); } catch { access = authService.cachedAccess(user); } if (!access.allowed) { setDailyLoading(false); $('menuButton').hidden = true; showView('auth-view'); $('authStatus').textContent = ({ 'email-unverified': 'Verify your email before continuing.', suspended: 'This account is suspended.', deactivated: 'This account is deactivated.', expired: 'Subscription access has expired.', pending: 'Your account is awaiting activation.', 'reconnect-required': 'Connect to the internet to verify access.' })[access.reason] || 'Account access is unavailable.'; return; } state.account=access.record; const token = await user.getIdTokenResult(); $('adminMenuButton').hidden = token.claims.admin !== true; }
+    if (!authService) {
+      setDailyLoading(false);
+      $('menuButton').hidden = true;
+      showView('auth-view');
+      $('authStatus').textContent =
+        'Firebase account setup is incomplete. Add your Firebase config in src/firebase.js.';
+      return;
+    }
+
+    const user = await authService.waitForUser();
+
+    if (!user) {
+      setDailyLoading(false);
+      $('menuButton').hidden = true;
+      showView('auth-view');
+      return;
+    }
+
+    let access;
+
+    try {
+      access = navigator.onLine
+        ? await authService.access(user)
+        : authService.cachedAccess(user);
+    } catch (error) {
+      console.warn('Online account check failed.', error);
+      access = authService.cachedAccess(user);
+    }
+
+    if (!access.allowed) {
+      setDailyLoading(false);
+      $('menuButton').hidden = true;
+      showView('auth-view');
+
+      $('authStatus').textContent = {
+        suspended: 'This account has been suspended.',
+        deactivated: 'This account has been deactivated.',
+        'reconnect-required':
+          'Connect to the internet once so your account can be verified.',
+        'account-missing':
+          'Your account profile could not be loaded.',
+      }[access.reason] || 'Account access is unavailable.';
+
+      return;
+    }
+
+    state.account = access.record;
+    $('menuButton').hidden = false;
+
+    const token = await user.getIdTokenResult();
+    $('adminMenuButton').hidden = token.claims.admin !== true;
     const initialization = await routineService.initialize(); if (import.meta.env.DEV) console.info('[development] IndexedDB diagnostics', initialization.diagnostics);
     state.settings = await routineService.getSettings(); await refreshDefinitions(); state.profile = await routineService.getLocationProfile(); await routineService.ensurePrayerCalculatorCurrent();
     renderProfileIdentity(); if (state.profile && state.settings.onboardingChoice) { await fetchRoutine(); if (state.settings.prayerRoutineEnabled !== false) void routineService.warmPrayerCache(); void routineService.getStoredDays().then((days)=>alarmCoordinator.reschedule(days,state.profile,state.settings)); } else if (state.profile) { setDailyLoading(false); showView('routine-choice-view'); } else { setDailyLoading(false); openSimpleLocationSetup(false); }

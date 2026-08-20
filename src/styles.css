@@ -5022,7 +5022,7 @@ html[data-theme="dark"] #monthlyAlarmTitle, html[data-theme="dark"] #activityAla
    so text color follows the actual row background. */
 html[data-theme="dark"] #monthly-table th, html[data-theme="dark"] #activity-table th {
   color: #ffffff !important;
-  -webkit-text-fill-color: #ffffff !important;
+  -webkit-text-fill-color: var(--accent-deep) !important;
 }
 
 html[data-theme="dark"] #monthly-table tbody tr:nth-child(odd) td, html[data-theme="dark"] #activity-table tbody tr:nth-child(odd) td {
@@ -5053,4 +5053,78 @@ html[data-theme="dark"] #monthly-table tbody tr:nth-child(even) td.date-alarm-on
 html[data-theme="dark"] #monthly-table tbody tr:nth-child(even) td.date-alarm-off, html[data-theme="dark"] #activity-table tbody tr:nth-child(even) td.date-alarm-off {
   color: #b91c1c !important;
   -webkit-text-fill-color: #b91c1c !important;
+}
+
+
+/* Account gate */
+#auth-view {
+  min-height: calc(100dvh - 110px);
+  place-items: center;
+  padding: 24px 14px 110px;
+}
+
+#auth-view.active {
+  display: grid;
+}
+
+#auth-view .card {
+  width: min(100%, 460px);
+  margin: 0 auto;
+  padding: 26px;
+}
+
+.auth-brand-mark {
+  width: 66px;
+  height: 66px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 14px;
+  border-radius: 22px;
+  background: var(--accent);
+  color: #07110b;
+  font-size: 2rem;
+  font-weight: 950;
+  box-shadow:
+    0 14px 30px color-mix(in srgb, var(--accent) 28%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+.auth-intro {
+  max-width: 34rem;
+  margin: 8px auto 22px;
+  color: var(--subtext);
+  text-align: center;
+  line-height: 1.55;
+}
+
+#auth-view .activity-form {
+  gap: 12px;
+}
+
+#auth-view input {
+  min-height: 48px;
+}
+
+#auth-view .home-btn {
+  min-height: 48px;
+  margin-top: 4px;
+}
+
+#auth-view details {
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid var(--edge);
+  border-radius: 16px;
+  background: var(--glass);
+}
+
+#auth-view summary {
+  cursor: pointer;
+  font-weight: 850;
+}
+
+#authStatus {
+  min-height: 24px;
+  margin-top: 12px;
+  text-align: center;
 }
