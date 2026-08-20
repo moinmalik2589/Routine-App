@@ -470,7 +470,7 @@ function initialiseControls() {
   $('datePicker').value = todayIso(); $('monthPicker').value = monthKey(todayIso()); $('actMonthPicker').value = monthKey(todayIso()); $('actYearPicker').value = String(currentYear);
   $('inspectorDate').value = todayIso(); if (import.meta.env.DEV) $('prayerInspector').hidden = false;
   $('appVersion').textContent = import.meta.env.VITE_APP_VERSION || '0.1.0';
-  if ('serviceWorker' in navigator && import.meta.env.PROD) navigator.serviceWorker.register('/sw.js').catch((error) => console.warn('Service worker registration failed', error));
+  if ('serviceWorker' in navigator && import.meta.env.PROD) navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch((error) => console.warn('Service worker registration failed', error));
   setInterval(() => { $('clock').textContent = new Date().toLocaleTimeString('en-US', { timeZone: APP_TIME_ZONE, hour12: true }); }, 1000);
 }
 
