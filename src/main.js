@@ -1,3 +1,4 @@
+import { initFirebaseAnalytics, trackEvent } from './firebase.js';
 import './styles.css';
 import { routineService, backupService, deleteAllLocalData } from './data/index.js';
 import { saveBackupFile, pickBackupFile } from './data/backup-files.js';
@@ -489,3 +490,29 @@ async function bootstrap() {
 window.addEventListener('beforeinstallprompt', (event) => { event.preventDefault(); deferredInstallPrompt = event; if ($('installApp')) $('installApp').hidden = false; });
 window.addEventListener('appinstalled', () => { deferredInstallPrompt = null; if ($('installApp')) $('installApp').hidden = true; });
 await bootstrap();
+
+window.addEventListener('DOMContentLoaded', () => initFirebaseAnalytics());
+
+document.addEventListener('change', (event) => {
+  const checkbox = event.target.closest('input[type="checkbox"][data-completion]');
+  if (!checkbox) return;
+
+  trackEvent(checkbox.checked ? 'habit_completed' : 'habit_unchecked', {
+    habit_id: checkbox.dataset.completion || 'unknown',
+  });
+});
+
+document.addEventListener('click', (event) => {
+  const target = event.target.closest('button, a, [role="button"]');
+  if (!target) return;
+
+  const id = target.id || '';
+  const label = (target.textContent || '').trim().toLowerCase();
+
+  if (id === 'themeToggle') trackEvent('theme_toggle_clicked');
+  if (label.includes('analytics')) trackEvent('analytics_opened');
+  if (label.includes('achievement')) trackEvent('achievements_opened');
+  if (label.includes('profile')) trackEvent('profile_opened');
+  if (label.includes('backup')) trackEvent('backup_opened');
+  if (label.includes('reminder')) trackEvent('reminders_opened');
+});

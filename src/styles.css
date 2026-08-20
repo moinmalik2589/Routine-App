@@ -5022,7 +5022,7 @@ html[data-theme="dark"] #monthlyAlarmTitle, html[data-theme="dark"] #activityAla
    so text color follows the actual row background. */
 html[data-theme="dark"] #monthly-table th, html[data-theme="dark"] #activity-table th {
   color: #ffffff !important;
-  -webkit-text-fill-color: var(--accent-deep) !important;
+  -webkit-text-fill-color: #ffffff !important;
 }
 
 html[data-theme="dark"] #monthly-table tbody tr:nth-child(odd) td, html[data-theme="dark"] #activity-table tbody tr:nth-child(odd) td {
